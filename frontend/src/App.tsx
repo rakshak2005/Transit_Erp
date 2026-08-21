@@ -73,6 +73,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedBatch, setSelectedBatch] = useState('');
+  const [orderWarehouse, setOrderWarehouse] = useState('');
 
   // Metadata & Content states
   const [metadata, setMetadata] = useState<{
@@ -96,7 +97,7 @@ export default function App() {
   // Forms
   const [newWO, setNewWO] = useState({ locationId: '', itemId: '', requiredQty: 0, assignedUserId: '' });
   const [newTransfer, setNewTransfer] = useState({ sourceLocationId: '', destLocationId: '', itemId: '', quantity: 0 });
-  const [newOrder, setNewOrder] = useState({ itemId: '', locationId: '', quantity: 0 });
+  const [newOrder, setNewOrder] = useState({ itemId: '', locationId: '', quantity: 0, companyName: '' });
 
   // Quick view Side Drawer
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
@@ -188,7 +189,8 @@ export default function App() {
           setNewOrder({
             locationId: data.locations[0].id,
             itemId: data.items[0].id,
-            quantity: 10
+            quantity: 10,
+            companyName: ''
           });
         }
       }
@@ -200,9 +202,11 @@ export default function App() {
   const fetchTabContent = async () => {
     try {
       const headers = getAuthHeader();
-      if (user?.role === 'ADMIN' || user?.role === 'OPERATIONS') {
+      if (user?.role === 'ADMIN' || user?.role === 'OPERATIONS' || user?.role === 'SALES') {
         const resInv = await fetch(`${API_BASE}/inventory`, { headers });
         if (resInv.ok) setInventory(await resInv.json());
+      }
+      if (user?.role === 'ADMIN' || user?.role === 'OPERATIONS') {
         const resTrans = await fetch(`${API_BASE}/transfers`, { headers });
         if (resTrans.ok) setTransfers(await resTrans.json());
       }
@@ -1007,12 +1011,105 @@ export default function App() {
 
         {/* TAB 4: Customer Orders */}
         {activeTab === 'orders' && (user.role === 'ADMIN' || user.role === 'SALES') && (
-          <div className="space-y-6">
+          <div className="space-y-8">
+            
+            {/* Warehouse Inventory Reservation Section */}
+            <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-lg">Reserve from Warehouse</h3>
+                  <p className="text-xs text-slate-500 mt-1">Select a warehouse to view live inventory and place reservations.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setOrderWarehouse('')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      orderWarehouse === ''
+                        ? 'bg-slate-800 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    All Warehouses
+                  </button>
+                  {metadata.locations.map(l => (
+                    <button
+                      key={l.id}
+                      onClick={() => setOrderWarehouse(l.id)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        orderWarehouse === l.id
+                          ? 'bg-slate-800 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {l.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="border border-slate-100 rounded-xl overflow-hidden">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                        <th className="p-4">Item (SKU)</th>
+                        <th className="p-4">Available Stock</th>
+                        <th className="p-4">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {inventory.filter(inv => !orderWarehouse || inv.locationId === orderWarehouse).length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="p-8 text-center text-slate-400 font-medium">No stock available in this warehouse.</td>
+                        </tr>
+                      ) : (
+                        inventory.filter(inv => !orderWarehouse || inv.locationId === orderWarehouse).map(inv => {
+                          const available = inv.physicalQty - inv.reservedQty;
+                          return (
+                            <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4">
+                                <span className="font-bold text-slate-800 block">{inv.itemName}</span>
+                                <span className="text-xs text-slate-400 font-bold">{inv.sku}</span>
+                              </td>
+                              <td className="p-4">
+                                <span className={`font-bold ${available > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                  {available} Units
+                                </span>
+                                <span className="text-xs text-slate-400 block mt-0.5">Physical: {inv.physicalQty} | Reserved: {inv.reservedQty}</span>
+                              </td>
+                              <td className="p-4">
+                                <button 
+                                  onClick={() => {
+                                    setNewOrder({ ...newOrder, locationId: inv.locationId, itemId: inv.itemId });
+                                    setActiveModal('order');
+                                  }}
+                                  disabled={available <= 0}
+                                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                    available > 0 
+                                      ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:scale-105 cursor-pointer' 
+                                      : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                                  }`}
+                                >
+                                  Reserve
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+
             <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
+              <div className="p-5 border-b border-slate-100 bg-white">
+                <h3 className="font-extrabold text-slate-800 text-lg">Active Customer Orders</h3>
+              </div>
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
                     <th className="p-4">Item & Location</th>
+                    <th className="p-4">Company</th>
                     <th className="p-4">Ordered Quantity</th>
                     <th className="p-4">Reserved Quantity</th>
                     <th className="p-4">Status</th>
@@ -1021,7 +1118,7 @@ export default function App() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {orders.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-slate-400 font-medium">No customer orders recorded.</td>
+                      <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">No customer orders recorded.</td>
                     </tr>
                   ) : (
                     orders.map((ord) => (
@@ -1030,10 +1127,17 @@ export default function App() {
                           <span className="font-bold text-slate-800 block">{ord.item.name}</span>
                           <span className="text-xs text-slate-400 font-bold">{ord.location.name}</span>
                         </td>
+                        <td className="p-4 font-semibold text-slate-700">
+                          {ord.companyName || <span className="text-slate-300 font-normal">—</span>}
+                        </td>
                         <td className="p-4 font-bold text-slate-700">{ord.quantity} Units</td>
                         <td className="p-4 text-slate-400 font-semibold">{ord.reservedQty} Reserved</td>
                         <td className="p-4">
-                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-250">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                            ord.status === 'RESERVED' 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                              : 'bg-amber-50 text-amber-600 border-amber-200'
+                          }`}>
                             {ord.status}
                           </span>
                         </td>
@@ -1421,6 +1525,17 @@ export default function App() {
                       value={newOrder.quantity || ''}
                       onChange={e => setNewOrder({ ...newOrder, quantity: parseInt(e.target.value) || 0 })}
                       min={1}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Company Name</label>
+                    <input
+                      type="text"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      value={newOrder.companyName || ''}
+                      onChange={e => setNewOrder({ ...newOrder, companyName: e.target.value })}
+                      placeholder="e.g. Acme Corp"
                       required
                     />
                   </div>

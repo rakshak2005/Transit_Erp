@@ -91,21 +91,50 @@ export class WorkOrderService {
   }
 
   static async updateStatus(id: string, status: WorkOrderStatus) {
-    const wo = await prisma.workOrder.findUnique({
-      where: { id },
-    });
-    if (!wo) {
-      throw new Error('Work order not found.');
-    }
+    return prisma.$transaction(async (tx) => {
+      const wo = await tx.workOrder.findUnique({
+        where: { id },
+      });
+      if (!wo) {
+        throw new Error('Work order not found.');
+      }
 
-    return prisma.workOrder.update({
-      where: { id },
-      data: { status },
-      include: {
-        item: true,
-        location: true,
-        assignedUser: true,
-      },
+      if (wo.status !== WorkOrderStatus.COMPLETED && status === WorkOrderStatus.COMPLETED) {
+        const inventory = await tx.inventory.findFirst({
+          where: {
+            itemId: wo.itemId,
+            locationId: wo.locationId,
+          },
+        });
+
+        if (inventory) {
+          await tx.inventory.update({
+            where: { id: inventory.id },
+            data: { physicalQty: inventory.physicalQty + wo.requiredQty },
+          });
+        } else {
+          await tx.inventory.create({
+            data: {
+              itemId: wo.itemId,
+              locationId: wo.locationId,
+              batchCode: `WO-${wo.id.substring(0, 8)}`,
+              physicalQty: wo.requiredQty,
+              reservedQty: 0,
+              updatedAt: new Date(),
+            },
+          });
+        }
+      }
+
+      return tx.workOrder.update({
+        where: { id },
+        data: { status },
+        include: {
+          item: true,
+          location: true,
+          assignedUser: true,
+        },
+      });
     });
   }
 }

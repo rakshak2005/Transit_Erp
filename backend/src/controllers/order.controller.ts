@@ -4,7 +4,7 @@ import { OrderService } from '../services/order.service';
 export class OrderController {
   static async create(req: Request, res: Response) {
     try {
-      const { itemId, locationId, quantity } = req.body;
+      const { itemId, locationId, quantity, companyName } = req.body;
 
       if (!itemId || !locationId || !quantity) {
         return res.status(400).json({ message: 'All fields (itemId, locationId, quantity) are required.' });
@@ -14,6 +14,7 @@ export class OrderController {
         itemId,
         locationId,
         quantity,
+        companyName,
       });
 
       return res.status(201).json(created);
