@@ -1,0 +1,153 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  OPERATIONS
+  SALES
+}
+
+enum WorkOrderStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TransferStatus {
+  REQUESTED
+  DISPATCHED
+  RECEIVED
+}
+
+enum OrderStatus {
+  PENDING
+  RESERVED
+  CANCELLED
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  username     String     @db.VarChar(255)
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @db.VarChar(255)
+  role         UserRole
+  locationId   String?    @db.Uuid
+  location     Location?  @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  workOrders   WorkOrder[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("users")
+}
+
+model Location {
+  id                    String          @id @default(uuid()) @db.Uuid
+  name                  String          @db.VarChar(255)
+  code                  String          @unique @db.VarChar(50)
+  users                 User[]
+  inventories           Inventory[]
+  workOrders            WorkOrder[]
+  sourceTransfers       StockTransfer[] @relation("SourceLocation")
+  destTransfers         StockTransfer[] @relation("DestLocation")
+  customerOrders        CustomerOrder[]
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@map("locations")
+}
+
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(255)
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Item {
+  id             String          @id @default(uuid()) @db.Uuid
+  name           String          @db.VarChar(255)
+  sku            String          @unique @db.VarChar(100)
+  categoryId     String          @db.Uuid
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  inventories    Inventory[]
+  workOrders     WorkOrder[]
+  transfers      StockTransfer[]
+  customerOrders CustomerOrder[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@map("items")
+}
+
+model Inventory {
+  id          String   @id @default(uuid()) @db.Uuid
+  itemId      String   @db.Uuid
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  locationId  String   @db.Uuid
+  location    Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  batchCode   String   @db.VarChar(100)
+  physicalQty Int      @default(0)
+  reservedQty Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @db.Timestamptz(6) // Use microsecond precision or standard timestamp
+
+  @@unique([itemId, locationId, batchCode])
+  @@map("inventories")
+}
+
+model WorkOrder {
+  id             String          @id @default(uuid()) @db.Uuid
+  locationId     String          @db.Uuid
+  location       Location        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  itemId         String          @db.Uuid
+  item           Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  requiredQty    Int
+  assignedUserId String          @db.Uuid
+  assignedUser   User            @relation(fields: [assignedUserId], references: [id], onDelete: Cascade)
+  status         WorkOrderStatus @default(ASSIGNED)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@map("work_orders")
+}
+
+model StockTransfer {
+  id               String         @id @default(uuid()) @db.Uuid
+  sourceLocationId String         @db.Uuid
+  sourceLocation   Location       @relation("SourceLocation", fields: [sourceLocationId], references: [id], onDelete: Cascade)
+  destLocationId   String         @db.Uuid
+  destLocation     Location       @relation("DestLocation", fields: [destLocationId], references: [id], onDelete: Cascade)
+  itemId           String         @db.Uuid
+  item             Item           @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  quantity         Int
+  batchCode        String?        @db.VarChar(100)
+  status           TransferStatus @default(REQUESTED)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("stock_transfers")
+}
+
+model CustomerOrder {
+  id          String      @id @default(uuid()) @db.Uuid
+  itemId      String      @db.Uuid
+  item        Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  locationId  String      @db.Uuid
+  location    Location    @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  quantity    Int
+  reservedQty Int         @default(0)
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("customer_orders")
+}

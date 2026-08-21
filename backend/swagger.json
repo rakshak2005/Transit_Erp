@@ -1,0 +1,258 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Mini Operations ERP API",
+    "version": "1.0.0",
+    "description": "API documentation for the Mini Operations ERP system managing Inventory, Work Orders, Stock Transfers, and Customer Orders."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/login": {
+      "post": {
+        "summary": "Authenticate User",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["emailOrUsername", "password"],
+                "properties": {
+                  "emailOrUsername": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Success" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/meta": {
+      "get": {
+        "summary": "Get Location, Item, User list metadata for dropdowns",
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      }
+    },
+    "/api/inventory": {
+      "get": {
+        "summary": "Get all inventory entries (ADMIN/OPERATIONS)",
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      }
+    },
+    "/api/inventory/{id}": {
+      "put": {
+        "summary": "Update physical quantity of an inventory entry (ADMIN/OPERATIONS)",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["physicalQty"],
+                "properties": {
+                  "physicalQty": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Success" },
+          "400": { "description": "Invalid physical qty" }
+        }
+      }
+    },
+    "/api/work-orders": {
+      "get": {
+        "summary": "Get work orders with shortage calculations",
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      },
+      "post": {
+        "summary": "Create work order (ADMIN)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["locationId", "itemId", "requiredQty", "assignedUserId"],
+                "properties": {
+                  "locationId": { "type": "string" },
+                  "itemId": { "type": "string" },
+                  "requiredQty": { "type": "integer" },
+                  "assignedUserId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" }
+        }
+      }
+    },
+    "/api/work-orders/{id}/status": {
+      "patch": {
+        "summary": "Update work order status (ADMIN/OPERATIONS)",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["ASSIGNED", "IN_PROGRESS", "COMPLETED"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      }
+    },
+    "/api/transfers": {
+      "get": {
+        "summary": "Get all stock transfers (ADMIN/OPERATIONS)",
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      },
+      "post": {
+        "summary": "Request stock transfer (ADMIN/OPERATIONS)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sourceLocationId", "destLocationId", "itemId", "quantity"],
+                "properties": {
+                  "sourceLocationId": { "type": "string" },
+                  "destLocationId": { "type": "string" },
+                  "itemId": { "type": "string" },
+                  "quantity": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" }
+        }
+      }
+    },
+    "/api/transfers/dispatch": {
+      "patch": {
+        "summary": "Dispatch stock transfer - reduces source stock (ADMIN/OPERATIONS)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                  "id": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      }
+    },
+    "/api/transfers/receive": {
+      "patch": {
+        "summary": "Receive stock transfer - increases dest stock (ADMIN/OPERATIONS)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                  "id": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "Get customer orders (ADMIN/SALES)",
+        "responses": {
+          "200": { "description": "Success" }
+        }
+      },
+      "post": {
+        "summary": "Create customer order and reserve stock (ADMIN/SALES)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["itemId", "locationId", "quantity"],
+                "properties": {
+                  "itemId": { "type": "string" },
+                  "locationId": { "type": "string" },
+                  "quantity": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Success" }
+        }
+      }
+    }
+  }
+}
