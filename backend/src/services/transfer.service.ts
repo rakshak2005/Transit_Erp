@@ -132,12 +132,14 @@ export class TransferService {
         throw new Error('Transfer batch code is missing.');
       }
 
+      const batchCode = transfer.batchCode as string;
+
       // Check if destination inventory record exists for this item and batch
       let destInventory = await tx.inventory.findFirst({
         where: {
           itemId: transfer.itemId,
           locationId: transfer.destLocationId,
-          batchCode: transfer.batchCode,
+          batchCode: batchCode,
         },
       });
 
@@ -155,7 +157,7 @@ export class TransferService {
           data: {
             itemId: transfer.itemId,
             locationId: transfer.destLocationId,
-            batchCode: transfer.batchCode,
+            batchCode: batchCode,
             physicalQty: transfer.quantity,
             reservedQty: 0,
             updatedAt: new Date(),
