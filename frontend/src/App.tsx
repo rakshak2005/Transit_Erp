@@ -302,9 +302,7 @@ export default function App() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(51,65,85,0.15),transparent)] pointer-events-none"></div>
         <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl shadow-2xl p-8 transition duration-300 hover:border-slate-700/60">
           <div className="flex flex-col items-center mb-8">
-            <div className="p-3 bg-indigo-600/10 rounded-2xl border border-indigo-500/20 mb-3">
-              <Layers className="h-8 w-8 text-indigo-400 animate-pulse" />
-            </div>
+            <img src="/logo.png" alt="Transit ERP Logo" className="h-20 object-contain mb-3" />
             <h1 className="text-2xl font-bold text-white tracking-wide">Mini Operations ERP</h1>
             <p className="text-slate-400 text-sm mt-1">Please sign in to manage operations</p>
           </div>
@@ -367,11 +365,8 @@ export default function App() {
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-slate-900/70 border-b md:border-b-0 md:border-r border-slate-800/80 p-5 flex flex-col justify-between backdrop-blur-xl">
         <div>
-          <div className="flex items-center gap-3 mb-8 px-2">
-            <div className="p-2 bg-indigo-600/10 rounded-xl border border-indigo-500/20">
-              <Layers className="h-6 w-6 text-indigo-400" />
-            </div>
-            <span className="font-bold text-lg text-white">Transit ERP</span>
+          <div className="flex items-center justify-center mb-8 px-2">
+            <img src="/logo.png" alt="Transit ERP Logo" className="h-14 object-contain" />
           </div>
 
           <nav className="space-y-1.5">
