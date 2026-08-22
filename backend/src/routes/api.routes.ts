@@ -23,6 +23,60 @@ router.get('/meta', authenticate, async (req, res) => {
   }
 });
 
+// Product / Item Creation Route
+router.post(
+  '/products',
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.OPERATIONS]),
+  async (req, res) => {
+    try {
+      const { name, sku, categoryName, locationId, batchCode, initialPhysicalQty } = req.body;
+      if (!name || !sku) {
+        return res.status(400).json({ message: 'Item name and SKU are required' });
+      }
+
+      // Find or create category
+      const targetCatName = categoryName?.trim() || 'General';
+      let category = await prisma.category.findFirst({
+        where: { name: { equals: targetCatName, mode: 'insensitive' } }
+      });
+      if (!category) {
+        category = await prisma.category.create({ data: { name: targetCatName } });
+      }
+
+      // Check if item with sku exists or create it
+      let item = await prisma.item.findUnique({ where: { sku } });
+      if (!item) {
+        item = await prisma.item.create({
+          data: {
+            name,
+            sku,
+            categoryId: category.id
+          }
+        });
+      }
+
+      // If locationId provided, create inventory record
+      if (locationId) {
+        await prisma.inventory.create({
+          data: {
+            itemId: item.id,
+            locationId,
+            batchCode: batchCode || 'B1',
+            physicalQty: Number(initialPhysicalQty) || 0,
+            reservedQty: 0,
+            updatedAt: new Date()
+          }
+        });
+      }
+
+      return res.status(201).json({ message: 'Product created successfully', item });
+    } catch (err: any) {
+      return res.status(500).json({ message: 'Failed to create product', error: err.message });
+    }
+  }
+);
+
 // Inventory Routes
 router.get(
   '/inventory',

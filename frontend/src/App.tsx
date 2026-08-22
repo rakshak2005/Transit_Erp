@@ -78,6 +78,7 @@ export default function App() {
   const [selectedBatch] = useState('');
   const [orderWarehouse, setOrderWarehouse] = useState('');
   const [woWarehouse, setWoWarehouse] = useState('');
+  const [transferWarehouse, setTransferWarehouse] = useState('');
 
   // Metadata & Content states
   const [metadata, setMetadata] = useState<{
@@ -926,58 +927,142 @@ export default function App() {
             </div>
           </header>
 
-          {/* 4 KPI Metric Cards */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              {
-                title: 'Total Stock',
-                value: metrics.totalPhysical,
-                desc: 'Aggregate physical units',
-                sparkline: [20, 30, 45, 35, 60, 50, 80]
-              },
-              {
-                title: 'Reserved Stock',
-                value: metrics.totalReserved,
-                desc: 'Customer committed items',
-                sparkline: [10, 20, 15, 30, 25, 40, 35]
-              },
-              {
-                title: 'Active Work Orders',
-                value: metrics.activeWorkOrders,
-                desc: 'Admin allocated tasks',
-                sparkline: [5, 12, 8, 15, 10, 18, 14]
-              },
-              {
-                title: 'Pending Transfers',
-                value: metrics.pendingTransfers,
-                desc: 'Inter-warehouse transit',
-                sparkline: [2, 4, 3, 7, 5, 8, 6]
-              }
-            ].map((card, idx) => (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -4 }}
-                className="glass-card rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm bg-white border border-slate-200"
-              >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-tr from-transparent to-slate-50 rounded-full pointer-events-none transition group-hover:scale-125" />
-                <div>
-                  <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">{card.title}</span>
-                  <h3 className="text-3xl font-extrabold text-slate-800 mt-2 tracking-tight">{card.value}</h3>
-                </div>
-                <div className="mt-4 flex items-end justify-between">
-                  <span className="text-[10px] text-slate-400 font-bold">{card.desc}</span>
-                  {/* Micro sparkline */}
-                  <svg className="w-16 h-8 text-blue-600 stroke-current fill-none stroke-[2]" viewBox="0 0 70 30">
-                    <path d={card.sparkline.reduce((acc, val, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${i * 10} ${30 - val / 3}`, '')} />
-                  </svg>
-                </div>
-              </motion.div>
-            ))}
-          </section>
-
-          {/* TAB 1: Inventory Table & Search */}
+          {/* TAB 1: Inventory Table & Search (With KPIs and Analytics Console) */}
           {activeTab === 'inventory' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              {/* 4 KPI Metric Cards */}
+              <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {[
+                  {
+                    title: 'Total Stock',
+                    value: metrics.totalPhysical,
+                    desc: 'Aggregate physical units',
+                    sparkline: [20, 30, 45, 35, 60, 50, 80]
+                  },
+                  {
+                    title: 'Reserved Stock',
+                    value: metrics.totalReserved,
+                    desc: 'Customer committed items',
+                    sparkline: [10, 20, 15, 30, 25, 40, 35]
+                  },
+                  {
+                    title: 'Active Work Orders',
+                    value: metrics.activeWorkOrders,
+                    desc: 'Admin allocated tasks',
+                    sparkline: [5, 12, 8, 15, 10, 18, 14]
+                  },
+                  {
+                    title: 'Pending Transfers',
+                    value: metrics.pendingTransfers,
+                    desc: 'Inter-warehouse transit',
+                    sparkline: [2, 4, 3, 7, 5, 8, 6]
+                  }
+                ].map((card, idx) => (
+                  <motion.div
+                    key={idx}
+                    whileHover={{ y: -4 }}
+                    className="glass-card rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm bg-white border border-slate-200"
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-tr from-transparent to-slate-50 rounded-full pointer-events-none transition group-hover:scale-125" />
+                    <div>
+                      <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">{card.title}</span>
+                      <h3 className="text-3xl font-extrabold text-slate-800 mt-2 tracking-tight">{card.value}</h3>
+                    </div>
+                    <div className="mt-4 flex items-end justify-between">
+                      <span className="text-[10px] text-slate-400 font-bold">{card.desc}</span>
+                      {/* Micro sparkline */}
+                      <svg className="w-16 h-8 text-blue-600 stroke-current fill-none stroke-[2]" viewBox="0 0 70 30">
+                        <path d={card.sparkline.reduce((acc, val, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${i * 10} ${30 - val / 3}`, '')} />
+                      </svg>
+                    </div>
+                  </motion.div>
+                ))}
+              </section>
+
+              {/* Analytics & Activity Split Console */}
+              <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Chart 1: Stock by Location */}
+                  <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
+                    <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-blue-600" />
+                      Stock by Location
+                    </h4>
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ReBarChart data={locationChartData}>
+                          <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+                          <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
+                          <ReTooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }} />
+                          <Bar dataKey="value" fill="url(#blueGrad)" radius={[8, 8, 0, 0]}>
+                            {locationChartData.map((_entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </ReBarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Chart 2: Category Distribution */}
+                  <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
+                    <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-indigo-600" />
+                      Category Breakdown
+                    </h4>
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RePieChart>
+                          <Pie
+                            data={categoryChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={4}
+                            dataKey="value"
+                          >
+                            {categoryChartData.map((_entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <ReTooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }} />
+                        </RePieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activity Timeline */}
+                <div className="glass-card rounded-[24px] p-6 space-y-6 shadow-sm bg-white border border-slate-200">
+                  <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
+                    <History className="h-4 w-4 text-cyan-600" />
+                    Activity Feed
+                  </h4>
+                  <div className="space-y-4 relative">
+                    <div className="absolute left-4 top-1.5 bottom-1.5 w-0.5 bg-slate-100" />
+                    {timelineData.length === 0 ? (
+                      <div className="text-slate-400 text-xs text-center py-6">No recent warehouse transactions.</div>
+                    ) : (
+                      timelineData.map((item, idx) => (
+                        <div key={idx} className="flex gap-4 relative z-10 pl-1.5">
+                          <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-indigo-600 mt-1 shrink-0">
+                            •
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                              <span>{item.title}</span>
+                              <span className="text-[10px] text-slate-400 font-semibold">{item.time}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1 font-medium">{item.detail}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </section>
+
               {/* Filter Console */}
               <div className="bg-white border border-slate-200 rounded-[24px] p-4 flex flex-wrap items-center gap-4 justify-between shadow-sm">
                 <div className="flex flex-wrap items-center gap-3.5 flex-1 min-w-[280px]">
@@ -1295,8 +1380,127 @@ export default function App() {
 
           {/* TAB 3: Stock Transfers */}
           {activeTab === 'transfers' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              {/* Warehouse Inventory Overview for Transfers */}
+              <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-lg">Warehouse Inventory Breakdown</h3>
+                    <p className="text-xs text-slate-500 mt-1">Select a warehouse to view live product availability across hubs.</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setTransferWarehouse('')}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${transferWarehouse === ''
+                        ? 'bg-slate-800 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                    >
+                      All Warehouses
+                    </button>
+                    {metadata.locations.map(l => (
+                      <button
+                        key={l.id}
+                        onClick={() => setTransferWarehouse(l.id)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${transferWarehouse === l.id
+                          ? 'bg-slate-800 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                      >
+                        {l.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stock Table */}
+                <div className="border border-slate-100 rounded-xl overflow-hidden">
+                  <div className="p-3 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Stock at {transferWarehouse ? metadata.locations.find(l => l.id === transferWarehouse)?.name : 'All Warehouses'}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500">
+                      {inventory.filter(inv => !transferWarehouse || inv.locationId === transferWarehouse).reduce((acc, i) => acc + i.availableQty, 0)} Total Available Units
+                    </span>
+                  </div>
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-white text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        <th className="p-3.5">Item & SKU</th>
+                        <th className="p-3.5">Category</th>
+                        <th className="p-3.5">Location</th>
+                        <th className="p-3.5">Batch</th>
+                        <th className="p-3.5">Physical Qty</th>
+                        <th className="p-3.5">Reserved Qty</th>
+                        <th className="p-3.5">Available for Transfer</th>
+                        <th className="p-3.5 text-right">Quick Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-sm">
+                      {inventory.filter(inv => !transferWarehouse || inv.locationId === transferWarehouse).length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="p-6 text-center text-slate-400 text-xs">No inventory found at this warehouse.</td>
+                        </tr>
+                      ) : (
+                        inventory.filter(inv => !transferWarehouse || inv.locationId === transferWarehouse).map(inv => (
+                          <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="p-3.5 font-bold text-slate-800">
+                              <span>{inv.itemName}</span>
+                              <span className="text-xs text-slate-400 font-normal block">{inv.sku}</span>
+                            </td>
+                            <td className="p-3.5 text-slate-500 text-xs font-medium">
+                              {inv.categoryName || 'General'}
+                            </td>
+                            <td className="p-3.5">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                                inv.locationCode === 'BLR' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+                                inv.locationCode === 'MYS' ? 'bg-purple-50 border-purple-200 text-purple-600' :
+                                'bg-cyan-50 border-cyan-200 text-cyan-600'
+                              }`}>
+                                {inv.locationName}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-slate-500 font-mono text-xs">
+                              {inv.batchCode || '—'}
+                            </td>
+                            <td className="p-3.5 font-bold text-slate-700">{inv.physicalQty}</td>
+                            <td className="p-3.5 text-slate-400">{inv.reservedQty}</td>
+                            <td className="p-3.5">
+                              <span className={`font-bold px-2.5 py-1 rounded-lg text-xs ${
+                                inv.availableQty > 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-rose-600 bg-rose-50 border border-rose-100'
+                              }`}>
+                                {inv.availableQty} Units
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <button
+                                onClick={() => {
+                                  setNewTransfer({ ...newTransfer, sourceLocationId: inv.locationId, itemId: inv.itemId });
+                                  setActiveModal('transfer');
+                                }}
+                                disabled={inv.availableQty <= 0}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                  inv.availableQty > 0
+                                    ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 hover:scale-105 cursor-pointer'
+                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                                }`}
+                              >
+                                Transfer
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Active Transfers Table */}
               <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
+                <div className="p-5 border-b border-slate-100 bg-white">
+                  <h3 className="font-extrabold text-slate-800 text-lg">Active Stock Transfers</h3>
+                </div>
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
@@ -1494,89 +1698,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Analytics & Activity Split Console */}
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
-            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Chart 1: Stock by Location */}
-              <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
-                <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-blue-600" />
-                  Stock by Location
-                </h4>
-                <div className="h-56">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ReBarChart data={locationChartData}>
-                      <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-                      <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
-                      <ReTooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }} />
-                      <Bar dataKey="value" fill="url(#blueGrad)" radius={[8, 8, 0, 0]}>
-                        {locationChartData.map((_entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </ReBarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Chart 2: Category Distribution */}
-              <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
-                <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-indigo-600" />
-                  Category Breakdown
-                </h4>
-                <div className="h-56">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RePieChart>
-                      <Pie
-                        data={categoryChartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={4}
-                        dataKey="value"
-                      >
-                        {categoryChartData.map((_entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <ReTooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }} />
-                    </RePieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Timeline */}
-            <div className="glass-card rounded-[24px] p-6 space-y-6 shadow-sm bg-white border border-slate-200">
-              <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
-                <History className="h-4 w-4 text-cyan-600" />
-                Activity Feed
-              </h4>
-              <div className="space-y-4 relative">
-                <div className="absolute left-4 top-1.5 bottom-1.5 w-0.5 bg-slate-100" />
-                {timelineData.length === 0 ? (
-                  <div className="text-slate-400 text-xs text-center py-6">No recent warehouse transactions.</div>
-                ) : (
-                  timelineData.map((item, idx) => (
-                    <div key={idx} className="flex gap-4 relative z-10 pl-1.5">
-                      <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-indigo-600 mt-1 shrink-0">
-                        •
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                          <span>{item.title}</span>
-                          <span className="text-[10px] text-slate-400 font-semibold">{item.time}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-1 font-medium">{item.detail}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </section>
         </div>
 
         {/* Radial Quick Action FAB */}

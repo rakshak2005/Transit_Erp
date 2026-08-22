@@ -19,4 +19,17 @@ export class AuthController {
       return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   }
+
+  static async loginPin(req: Request, res: Response) {
+    try {
+      const { pin } = req.body;
+      if (!pin) {
+        return res.status(400).json({ message: 'PIN is required' });
+      }
+      const result = await AuthService.loginWithPin(pin);
+      return res.status(200).json(result);
+    } catch (error: any) {
+      return res.status(401).json({ message: error.message || 'Invalid PIN' });
+    }
+  }
 }
