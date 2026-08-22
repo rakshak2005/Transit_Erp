@@ -4,7 +4,16 @@ import { OrderService } from '../services/order.service';
 export class OrderController {
   static async create(req: Request, res: Response) {
     try {
-      const { itemId, locationId, quantity, companyName } = req.body;
+      let { itemId, locationId, quantity, companyName } = req.body;
+
+      // If user is restricted to a warehouse hub, force and enforce their location
+      const user = (req as any).user;
+      if (user?.locationId) {
+        if (locationId && locationId !== user.locationId) {
+          return res.status(403).json({ message: 'Restricted: You can only create sales reservations for your assigned warehouse branch.' });
+        }
+        locationId = user.locationId;
+      }
 
       if (!itemId || !locationId || !quantity) {
         return res.status(400).json({ message: 'All fields (itemId, locationId, quantity) are required.' });

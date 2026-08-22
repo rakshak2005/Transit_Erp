@@ -74,6 +74,36 @@ async function main() {
     },
   });
 
+  const opsBlr = await prisma.user.create({
+    data: {
+      username: 'ops-blr',
+      email: 'ops-blr@transit.com',
+      passwordHash: opsPasswordHash,
+      role: UserRole.OPERATIONS,
+      locationId: blr.id,
+    },
+  });
+
+  const opsMys = await prisma.user.create({
+    data: {
+      username: 'ops-mys',
+      email: 'ops-mys@transit.com',
+      passwordHash: opsPasswordHash,
+      role: UserRole.OPERATIONS,
+      locationId: mys.id, // assigned to Mysore
+    },
+  });
+
+  const opsMaa = await prisma.user.create({
+    data: {
+      username: 'ops-maa',
+      email: 'ops-maa@transit.com',
+      passwordHash: opsPasswordHash,
+      role: UserRole.OPERATIONS,
+      locationId: maa.id, // assigned to Chennai
+    },
+  });
+
   const sales = await prisma.user.create({
     data: {
       username: 'sales',

@@ -95,7 +95,7 @@ router.put(
 router.post(
   '/work-orders',
   authenticate,
-  authorize([UserRole.ADMIN]),
+  authorize([UserRole.ADMIN, UserRole.OPERATIONS]),
   WorkOrderController.create
 );
 router.get(

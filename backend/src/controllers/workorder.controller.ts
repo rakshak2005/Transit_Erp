@@ -5,7 +5,16 @@ import { WorkOrderStatus } from '@prisma/client';
 export class WorkOrderController {
   static async create(req: Request, res: Response) {
     try {
-      const { locationId, itemId, requiredQty, assignedUserId } = req.body;
+      let { locationId, itemId, requiredQty, assignedUserId } = req.body;
+
+      // If user is restricted to a warehouse hub, force and enforce their location
+      const user = (req as any).user;
+      if (user?.locationId) {
+        if (locationId && locationId !== user.locationId) {
+          return res.status(403).json({ message: 'Restricted: You can only create work orders for your assigned warehouse branch.' });
+        }
+        locationId = user.locationId;
+      }
 
       if (!locationId || !itemId || !requiredQty || !assignedUserId) {
         return res.status(400).json({ message: 'All fields (locationId, itemId, requiredQty, assignedUserId) are required.' });

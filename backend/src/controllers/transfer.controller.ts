@@ -4,7 +4,20 @@ import { TransferService } from '../services/transfer.service';
 export class TransferController {
   static async create(req: Request, res: Response) {
     try {
-      const { sourceLocationId, destLocationId, itemId, quantity } = req.body;
+      let { sourceLocationId, destLocationId, itemId, quantity } = req.body;
+
+      // If user is restricted to a warehouse hub, source must be their assigned branch
+      const user = (req as any).user;
+      if (user?.locationId) {
+        if (sourceLocationId && sourceLocationId !== user.locationId) {
+          return res.status(403).json({ message: 'Restricted: Stock transfers must originate from your assigned warehouse branch.' });
+        }
+        sourceLocationId = user.locationId;
+      }
+
+      if (sourceLocationId === destLocationId) {
+        return res.status(400).json({ message: 'Destination location must be different from the source branch.' });
+      }
 
       if (!sourceLocationId || !destLocationId || !itemId || !quantity) {
         return res.status(400).json({ message: 'All fields (sourceLocationId, destLocationId, itemId, quantity) are required.' });

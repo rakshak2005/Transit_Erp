@@ -586,12 +586,8 @@ export default function App() {
                         <span className="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block shadow-sm"></span>
                         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block shadow-sm"></span>
                       </div>
-                      <div className="flex gap-1.5">
-                        <div className="h-2.5 w-2.5 rounded-full bg-rose-500/80"></div>
-                        <div className="h-2.5 w-2.5 rounded-full bg-amber-500/80"></div>
-                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/80"></div>
-                      </div>
-                      <span className="text-zinc-300 font-bold ml-1">DEVELOPER MODE • DEMO LOGINS</span>
+
+                      <span className="text-zinc-300 font-bold ml-1">DEVELOPER MODE CREDENTIALS</span>
                     </div>
                     <button
                       type="button"
@@ -604,10 +600,7 @@ export default function App() {
                   </div>
 
                   {/* Prompt */}
-                  <div className="text-[11px] text-emerald-400 mb-2 flex items-center justify-between">
-                    <span>$ select_account --fill-credentials</span>
-                    <span className="text-[10px] text-zinc-500">populates form</span>
-                  </div>
+
 
                   {/* Exactly 3 Interactive Terminal Rows */}
                   <div className="space-y-2">
@@ -2097,14 +2090,25 @@ export default function App() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Location</label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider">Location</label>
+                        {user?.locationId && (
+                          <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                            🏢 Locked to {user.locationCode || 'Branch'}
+                          </span>
+                        )}
+                      </div>
                       <select
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                        value={newWO.locationId}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                        value={user?.locationId || newWO.locationId}
+                        disabled={!!user?.locationId}
                         onChange={e => setNewWO({ ...newWO, locationId: e.target.value })}
                       >
                         {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
                       </select>
+                      {user?.locationId && (
+                        <p className="text-[10px] text-slate-400 mt-1">Work orders are restricted to your assigned branch.</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Required Quantity</label>
@@ -2129,7 +2133,7 @@ export default function App() {
                     </div>
                     <button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer shadow-md hover:shadow-lg"
                     >
                       Commit Work Order
                     </button>
@@ -2150,24 +2154,38 @@ export default function App() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Source Location</label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider">Source Location (Origin)</label>
+                        {user?.locationId && (
+                          <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200">
+                            🏢 Current Branch ({user.locationCode || 'Origin'})
+                          </span>
+                        )}
+                      </div>
                       <select
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                        value={newTransfer.sourceLocationId}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                        value={user?.locationId || newTransfer.sourceLocationId}
+                        disabled={!!user?.locationId}
                         onChange={e => setNewTransfer({ ...newTransfer, sourceLocationId: e.target.value })}
                       >
                         {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
                       </select>
+                      {user?.locationId && (
+                        <p className="text-[10px] text-slate-400 mt-1">Transfers must originate from your current warehouse branch.</p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Destination Location</label>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Destination Location (Target)</label>
                       <select
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
                         value={newTransfer.destLocationId}
                         onChange={e => setNewTransfer({ ...newTransfer, destLocationId: e.target.value })}
                       >
-                        {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
+                        {metadata.locations
+                          .filter(l => !user?.locationId || l.id !== user.locationId)
+                          .map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
                       </select>
+                      <p className="text-[10px] text-slate-400 mt-1">Select any other destination warehouse to receive stock.</p>
                     </div>
                     <div>
                       <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Transfer Quantity</label>
@@ -2182,7 +2200,7 @@ export default function App() {
                     </div>
                     <button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer shadow-md hover:shadow-lg"
                     >
                       Commit Stock Transfer
                     </button>
@@ -2203,14 +2221,25 @@ export default function App() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Reservation Location</label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider">Reservation Location</label>
+                        {user?.locationId && (
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            🏢 Locked to {user.locationCode || 'Branch'}
+                          </span>
+                        )}
+                      </div>
                       <select
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                        value={newOrder.locationId}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                        value={user?.locationId || newOrder.locationId}
+                        disabled={!!user?.locationId}
                         onChange={e => setNewOrder({ ...newOrder, locationId: e.target.value })}
                       >
                         {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
                       </select>
+                      {user?.locationId && (
+                        <p className="text-[10px] text-slate-400 mt-1">Customer reservations are restricted to your assigned branch.</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Order Quantity</label>
@@ -2236,7 +2265,7 @@ export default function App() {
                     </div>
                     <button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer shadow-md hover:shadow-lg"
                     >
                       Commit Stock Reservation
                     </button>
