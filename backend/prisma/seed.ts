@@ -58,7 +58,7 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       username: 'admin',
-      email: 'admin@fundsroom.com',
+      email: 'admin@transit.com',
       passwordHash: adminPasswordHash,
       role: UserRole.ADMIN,
     },
@@ -67,7 +67,7 @@ async function main() {
   const ops = await prisma.user.create({
     data: {
       username: 'ops',
-      email: 'ops@fundsroom.com',
+      email: 'ops@transit.com',
       passwordHash: opsPasswordHash,
       role: UserRole.OPERATIONS,
       locationId: blr.id, // assigned to Bangalore
@@ -77,7 +77,7 @@ async function main() {
   const sales = await prisma.user.create({
     data: {
       username: 'sales',
-      email: 'sales@fundsroom.com',
+      email: 'sales@transit.com',
       passwordHash: salesPasswordHash,
       role: UserRole.SALES,
     },

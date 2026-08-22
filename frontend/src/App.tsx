@@ -62,6 +62,7 @@ export default function App() {
   // Authentication states
   const [loginInput, setLoginInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [warehousePinInput, setWarehousePinInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [showDevPanel, setShowDevPanel] = useState(false);
 
@@ -103,13 +104,14 @@ export default function App() {
   const [newWO, setNewWO] = useState({ locationId: '', itemId: '', requiredQty: 0, assignedUserId: '' });
   const [newTransfer, setNewTransfer] = useState({ sourceLocationId: '', destLocationId: '', itemId: '', quantity: 0 });
   const [newOrder, setNewOrder] = useState({ itemId: '', locationId: '', quantity: 0, companyName: '' });
+  const [newProduct, setNewProduct] = useState({ name: '', sku: '', categoryName: 'Electronics', locationId: '', batchCode: 'B1', initialPhysicalQty: 50 });
 
   // Quick view Side Drawer
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
   const [editingPhysicalQty, setEditingPhysicalQty] = useState<number>(0);
 
   // Form Modals (via overlay state)
-  const [activeModal, setActiveModal] = useState<null | 'wo' | 'transfer' | 'order'>(null);
+  const [activeModal, setActiveModal] = useState<null | 'wo' | 'transfer' | 'order' | 'product'>(null);
 
   // Tick time
   useEffect(() => {
@@ -130,13 +132,21 @@ export default function App() {
     }
   }, [successMsg, errorMsg]);
 
-  // Load content
+  // Load content & apply warehouse restrictions
   useEffect(() => {
     if (token) {
       fetchMetadata();
       fetchTabContent();
     }
   }, [token, activeTab]);
+
+  useEffect(() => {
+    if (user?.locationId && user?.role !== 'ADMIN') {
+      setWoWarehouse(user.locationId);
+      setTransferWarehouse(user.locationId);
+      setOrderWarehouse(user.locationId);
+    }
+  }, [user]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +155,11 @@ export default function App() {
       const res = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailOrUsername: loginInput, password: passwordInput })
+        body: JSON.stringify({
+          emailOrUsername: loginInput,
+          password: passwordInput,
+          warehousePin: warehousePinInput
+        })
       });
       let data: any = {};
       try {
@@ -164,6 +178,34 @@ export default function App() {
       setSuccessMsg(`Welcome to Transit ERP, ${data.user.username}!`);
     } catch (err: any) {
       setAuthError(err.message || 'Unable to connect to backend server.');
+    }
+  };
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE}/products`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: JSON.stringify(newProduct)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to create product');
+
+      setSuccessMsg(`Product "${newProduct.name}" (${newProduct.sku}) added successfully!`);
+      setActiveModal(null);
+      setNewProduct({
+        name: '',
+        sku: '',
+        categoryName: 'Electronics',
+        locationId: metadata.locations[0]?.id || '',
+        batchCode: 'B1',
+        initialPhysicalQty: 50
+      });
+      fetchMetadata();
+      fetchTabContent();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error adding new product');
     }
   };
 
@@ -204,6 +246,10 @@ export default function App() {
             quantity: 10,
             companyName: ''
           });
+          setNewProduct(prev => ({
+            ...prev,
+            locationId: prev.locationId || data.locations[0].id
+          }));
         }
       }
     } catch (err) {
@@ -540,12 +586,13 @@ export default function App() {
                         <span className="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block shadow-sm"></span>
                         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block shadow-sm"></span>
                       </div>
-                      <span className="text-[11px] text-emerald-400 font-extrabold ml-1.5 tracking-wider uppercase">
-                        DEVELOPER MODE
-                      </span>
+                      <div className="flex gap-1.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-rose-500/80"></div>
+                        <div className="h-2.5 w-2.5 rounded-full bg-amber-500/80"></div>
+                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/80"></div>
+                      </div>
+                      <span className="text-zinc-300 font-bold ml-1">DEVELOPER MODE • DEMO LOGINS</span>
                     </div>
-
-                    {/* Into / Close mark button */}
                     <button
                       type="button"
                       onClick={() => setShowDevPanel(false)}
@@ -558,60 +605,81 @@ export default function App() {
 
                   {/* Prompt */}
                   <div className="text-[11px] text-emerald-400 mb-2 flex items-center justify-between">
-                    <span>$ select_role --auto-inject</span>
-                    <span className="text-[10px] text-zinc-500">1-click fill</span>
+                    <span>$ select_account --fill-credentials</span>
+                    <span className="text-[10px] text-zinc-500">populates form</span>
                   </div>
 
-                  {/* 3 Interactive Terminal Rows */}
-                  <div className="space-y-1.5">
-                    {/* Admin */}
+                  {/* Exactly 3 Interactive Terminal Rows */}
+                  <div className="space-y-2">
+                    {/* 1. Admin */}
                     <button
                       type="button"
-                      onClick={() => { setLoginInput('admin@fundsroom.com'); setPasswordInput('admin123'); }}
-                      className="w-full flex items-center justify-between p-2 rounded-lg bg-zinc-950/80 hover:bg-emerald-950/40 border border-zinc-800 hover:border-emerald-500/50 transition cursor-pointer group text-left"
+                      onClick={() => {
+                        setLoginInput('admin@transit.com');
+                        setPasswordInput('admin123');
+                        setWarehousePinInput('');
+                        setSuccessMsg('Loaded Master Admin credentials. Click Sign In.');
+                      }}
+                      className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/80 hover:bg-emerald-950/40 border border-zinc-800 hover:border-emerald-500/50 transition cursor-pointer group text-left"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-emerald-400 font-bold text-[11px]">&gt; ADMIN</span>
-                        <span className="text-zinc-300 text-[11px]">admin@fundsroom.com</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-400 font-bold text-[11px]">&gt; ADMIN</span>
+                          <span className="text-zinc-200 text-[11px] font-mono font-semibold">admin@transit.com</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">Master Administrator Access</div>
                       </div>
                       <div className="flex items-center gap-2 text-[10px]">
-                        <span className="text-zinc-500">pass:</span>
-                        <span className="text-zinc-200 font-bold">admin123</span>
-                        <span className="text-emerald-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">↵</span>
+                        <span className="text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded font-mono">admin123</span>
+                        <span className="text-emerald-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">Fill ↵</span>
                       </div>
                     </button>
 
-                    {/* Ops */}
+                    {/* 2. Operations */}
                     <button
                       type="button"
-                      onClick={() => { setLoginInput('ops@fundsroom.com'); setPasswordInput('ops123'); }}
-                      className="w-full flex items-center justify-between p-2 rounded-lg bg-zinc-950/80 hover:bg-cyan-950/40 border border-zinc-800 hover:border-cyan-500/50 transition cursor-pointer group text-left"
+                      onClick={() => {
+                        setLoginInput('ops@transit.com');
+                        setPasswordInput('ops123');
+                        setWarehousePinInput('');
+                        setSuccessMsg('Loaded Operations credentials. Click Sign In.');
+                      }}
+                      className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/80 hover:bg-cyan-950/40 border border-zinc-800 hover:border-cyan-500/50 transition cursor-pointer group text-left"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-cyan-400 font-bold text-[11px]">&gt; OPS (BLR)</span>
-                        <span className="text-zinc-300 text-[11px]">ops@fundsroom.com</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-cyan-400 font-bold text-[11px]">&gt; OPERATIONS</span>
+                          <span className="text-zinc-200 text-[11px] font-mono font-semibold">ops@transit.com</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">Warehouse Operations Terminal</div>
                       </div>
                       <div className="flex items-center gap-2 text-[10px]">
-                        <span className="text-zinc-500">pass:</span>
-                        <span className="text-zinc-200 font-bold">ops123</span>
-                        <span className="text-cyan-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">↵</span>
+                        <span className="text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded font-mono">ops123</span>
+                        <span className="text-cyan-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">Fill ↵</span>
                       </div>
                     </button>
 
-                    {/* Sales */}
+                    {/* 3. Sales */}
                     <button
                       type="button"
-                      onClick={() => { setLoginInput('sales@fundsroom.com'); setPasswordInput('sales123'); }}
-                      className="w-full flex items-center justify-between p-2 rounded-lg bg-zinc-950/80 hover:bg-violet-950/40 border border-zinc-800 hover:border-violet-500/50 transition cursor-pointer group text-left"
+                      onClick={() => {
+                        setLoginInput('sales@transit.com');
+                        setPasswordInput('sales123');
+                        setWarehousePinInput('');
+                        setSuccessMsg('Loaded Sales credentials. Click Sign In.');
+                      }}
+                      className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/80 hover:bg-purple-950/40 border border-zinc-800 hover:border-purple-500/50 transition cursor-pointer group text-left"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-violet-400 font-bold text-[11px]">&gt; SALES (MYS)</span>
-                        <span className="text-zinc-300 text-[11px]">sales@fundsroom.com</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-purple-400 font-bold text-[11px]">&gt; SALES</span>
+                          <span className="text-zinc-200 text-[11px] font-mono font-semibold">sales@transit.com</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">Sales & Customer Orders Terminal</div>
                       </div>
                       <div className="flex items-center gap-2 text-[10px]">
-                        <span className="text-zinc-500">pass:</span>
-                        <span className="text-zinc-200 font-bold">sales123</span>
-                        <span className="text-violet-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">↵</span>
+                        <span className="text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded font-mono">sales123</span>
+                        <span className="text-purple-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">Fill ↵</span>
                       </div>
                     </button>
                   </div>
@@ -625,7 +693,7 @@ export default function App() {
                   className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-900/50 hover:border-emerald-400 transition-all duration-200 cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.15)] group"
                 >
                   <Terminal className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <span>&gt; Open Developer Mode</span>
+                  <span>&gt; Developer Mode</span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-sans font-semibold">Demo</span>
                 </motion.button>
               )}
@@ -638,7 +706,7 @@ export default function App() {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
               <span>Transit ERP Enterprise Core</span>
             </div>
-            <span className="text-[10px] text-slate-500">Fundsroom 2ndROund</span>
+            <span className="text-[10px] text-slate-500">Transit Core</span>
           </div>
         </div>
 
@@ -658,19 +726,23 @@ export default function App() {
             <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
 
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-6">
               <h2 className="text-3xl font-black text-slate-900 tracking-tight">Sign In</h2>
-              <p className="text-slate-500 text-xs mt-1 font-semibold uppercase tracking-wider">Enter your terminal credentials</p>
+              <p className="text-slate-500 text-xs mt-1 font-semibold uppercase tracking-wider">
+                Terminal credentials & warehouse authentication
+              </p>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-5">
+            {/* Unified Form (Supports email/password & warehouse PIN) */}
+            <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Username / Email</label>
+                <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">
+                  Username / Email
+                </label>
                 <input
                   type="text"
-                  className="w-full bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-[16px] px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/15 focus:bg-white text-sm transition-all duration-300 shadow-[0_2px_12px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,1)] hover:border-slate-300 hover:bg-white"
-                  placeholder="name@company.com"
+                  className="w-full bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-[16px] px-5 py-3.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/15 focus:bg-white text-sm transition-all duration-300 shadow-[0_2px_12px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,1)] hover:border-slate-300 hover:bg-white"
+                  placeholder="admin@transit.com / ops@... / sales@..."
                   value={loginInput}
                   onChange={e => setLoginInput(e.target.value)}
                   required
@@ -682,7 +754,7 @@ export default function App() {
                 <div className="relative">
                   <input
                     type="password"
-                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-[16px] px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/15 focus:bg-white text-sm transition-all duration-300 pr-12 shadow-[0_2px_12px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,1)] hover:border-slate-300 hover:bg-white"
+                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-[16px] px-5 py-3.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/15 focus:bg-white text-sm transition-all duration-300 pr-12 shadow-[0_2px_12px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,1)] hover:border-slate-300 hover:bg-white"
                     placeholder="••••••••"
                     value={passwordInput}
                     onChange={e => setPasswordInput(e.target.value)}
@@ -695,42 +767,92 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between text-xs font-bold px-1">
-                <label className="flex items-center gap-2 text-slate-650 cursor-pointer select-none">
-                  <input type="checkbox" className="rounded border-slate-300 text-[#4F46E5] focus:ring-[#4F46E5]" />
-                  <span>Remember Me</span>
+              {/* Warehouse PIN Input & Quick Selector */}
+              <div className="space-y-1.5">
+                <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1 flex items-center justify-between">
+                  <span>Warehouse Branch PIN</span>
+                  <span className="text-indigo-600 font-mono text-[10px]">Mysore: 11 | Chennai: 22 | BLR: 33</span>
                 </label>
-                <span className="text-[#4F46E5] hover:text-[#2563EB] hover:underline cursor-pointer">
-                  Forgot Password?
-                </span>
+                <input
+                  type="text"
+                  maxLength={4}
+                  className="w-full bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-[16px] px-5 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/15 focus:bg-white text-sm font-mono tracking-widest transition-all duration-300 shadow-[0_2px_12px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,1)]"
+                  placeholder="secret warehouse pin"
+                  value={warehousePinInput}
+                  onChange={e => setWarehousePinInput(e.target.value)}
+                />
+
+                {/* Quick warehouse pill buttons */}
+                <div className="grid grid-cols-4 gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setWarehousePinInput('11')}
+                    className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition cursor-pointer ${warehousePinInput === '11'
+                      ? 'bg-purple-100 border-purple-400 text-purple-700'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                      }`}
+                  >
+                    11 MYS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWarehousePinInput('22')}
+                    className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition cursor-pointer ${warehousePinInput === '22'
+                      ? 'bg-blue-100 border-blue-400 text-blue-700'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                      }`}
+                  >
+                    22 MAA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWarehousePinInput('33')}
+                    className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition cursor-pointer ${warehousePinInput === '33'
+                      ? 'bg-cyan-100 border-cyan-400 text-cyan-700'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                      }`}
+                  >
+                    33 BLR
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWarehousePinInput('00')}
+                    className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition cursor-pointer ${warehousePinInput === '00'
+                      ? 'bg-emerald-100 border-emerald-400 text-emerald-700'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600'
+                      }`}
+                  >
+                    00 ALL
+                  </button>
+                </div>
               </div>
 
               {authError && (
-                <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 rounded-[14px] p-4 text-rose-600 text-xs font-semibold">
+                <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 rounded-[14px] p-3 text-rose-600 text-xs font-semibold">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   <span>{authError}</span>
                 </div>
               )}
 
-              {/* Login Button with gradient & lift hover */}
               <button
                 type="submit"
-                className="group w-full bg-gradient-to-r from-[#4F46E5] via-[#4338CA] to-[#2563EB] hover:from-[#4338CA] hover:to-[#1D4ED8] text-white font-extrabold rounded-[16px] py-4 transition-all duration-300 shadow-[0_10px_30px_rgba(79,70,229,0.4)] hover:shadow-[0_15px_35px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 cursor-pointer text-sm flex items-center justify-center gap-2 backdrop-blur-sm"
+                className="group w-full bg-gradient-to-r from-[#4F46E5] via-[#4338CA] to-[#2563EB] hover:from-[#4338CA] hover:to-[#1D4ED8] text-white font-extrabold rounded-[16px] py-4 transition-all duration-300 shadow-[0_10px_30px_rgba(79,70,229,0.4)] hover:shadow-[0_15px_35px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 cursor-pointer text-sm flex items-center justify-center gap-2 mt-2"
               >
-                <span>Login</span>
+                <span>Sign In</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </button>
 
               {/* Developer Mode Live Notice below Login Button */}
-              <div className="pt-3 border-t border-slate-200/70 flex items-center gap-2 justify-center text-center">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
-                </span>
-                <p className="text-[11px] font-mono text-slate-500 font-medium">
-                  This system is in <span className="text-indigo-600 font-bold uppercase">Developer Mode</span> with live test credentials.
-                </p>
+              <div className="pt-3 mt-3 border-t border-slate-200/70 flex flex-col items-center gap-1 text-center">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                  </span>
+                  <p className="text-[11px] font-mono text-slate-600 font-semibold">
+                    This website is currently in developer mode, and all credentials provided are for testing purposes only
+                  </p>
+                </div>
               </div>
             </form>
           </motion.div>
@@ -887,15 +1009,24 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-6 md:px-8 pb-0 pt-6 space-y-8">
           <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-5 rounded-[24px] border border-slate-200/80 shadow-sm backdrop-blur-md">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 capitalize">
                   {activeTab.replace('-', ' ')}
                 </h1>
                 <span className="bg-blue-50 border border-blue-200 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
                   Live Warehouse Qty
                 </span>
+                {user.locationCode && user.role !== 'ADMIN' && (
+                  <span className="bg-purple-50 border border-purple-200 text-purple-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                    🏢 {user.locationCode} Hub Restricted
+                  </span>
+                )}
               </div>
-              <p className="text-slate-500 mt-1 text-sm">Transit ERP Executive Terminal</p>
+              <p className="text-slate-500 mt-1 text-sm">
+                {user.locationCode && user.role !== 'ADMIN'
+                  ? `Dedicated terminal for ${user.locationCode} warehouse hub.`
+                  : 'Transit ERP Executive Terminal'}
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3.5">
@@ -915,7 +1046,8 @@ export default function App() {
 
               <button
                 onClick={() => {
-                  if (user.role === 'ADMIN') setActiveModal('wo');
+                  if (activeTab === 'inventory') setActiveModal('product');
+                  else if (user.role === 'ADMIN') setActiveModal('wo');
                   else if (user.role === 'OPERATIONS') setActiveModal('transfer');
                   else if (user.role === 'SALES') setActiveModal('order');
                 }}
@@ -1101,6 +1233,14 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveModal('product')}
+                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold px-4 py-2.5 rounded-[14px] text-xs transition cursor-pointer shadow-sm shadow-blue-500/20 hover:scale-105"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add New Product</span>
+                  </button>
+
                   <button
                     onClick={() => {
                       const csvContent = "data:text/csv;charset=utf-8,"
@@ -1452,11 +1592,10 @@ export default function App() {
                               {inv.categoryName || 'General'}
                             </td>
                             <td className="p-3.5">
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                                inv.locationCode === 'BLR' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${inv.locationCode === 'BLR' ? 'bg-blue-50 border-blue-200 text-blue-600' :
                                 inv.locationCode === 'MYS' ? 'bg-purple-50 border-purple-200 text-purple-600' :
-                                'bg-cyan-50 border-cyan-200 text-cyan-600'
-                              }`}>
+                                  'bg-cyan-50 border-cyan-200 text-cyan-600'
+                                }`}>
                                 {inv.locationName}
                               </span>
                             </td>
@@ -1466,9 +1605,8 @@ export default function App() {
                             <td className="p-3.5 font-bold text-slate-700">{inv.physicalQty}</td>
                             <td className="p-3.5 text-slate-400">{inv.reservedQty}</td>
                             <td className="p-3.5">
-                              <span className={`font-bold px-2.5 py-1 rounded-lg text-xs ${
-                                inv.availableQty > 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-rose-600 bg-rose-50 border border-rose-100'
-                              }`}>
+                              <span className={`font-bold px-2.5 py-1 rounded-lg text-xs ${inv.availableQty > 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-rose-600 bg-rose-50 border border-rose-100'
+                                }`}>
                                 {inv.availableQty} Units
                               </span>
                             </td>
@@ -1479,11 +1617,10 @@ export default function App() {
                                   setActiveModal('transfer');
                                 }}
                                 disabled={inv.availableQty <= 0}
-                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                                  inv.availableQty > 0
-                                    ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 hover:scale-105 cursor-pointer'
-                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-                                }`}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${inv.availableQty > 0
+                                  ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 hover:scale-105 cursor-pointer'
+                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                                  }`}
                               >
                                 Transfer
                               </button>
@@ -1721,6 +1858,13 @@ export default function App() {
               >
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 pb-1.5">ERP Quick Actions</div>
                 <button
+                  onClick={() => { setIsRadialOpen(false); setActiveModal('product'); }}
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5 text-blue-500" />
+                  Add New Product
+                </button>
+                <button
                   onClick={() => { setIsRadialOpen(false); setActiveModal('wo'); }}
                   className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
                 >
@@ -1846,12 +1990,98 @@ export default function App() {
               >
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-lg font-bold text-slate-800">
-                    {activeModal === 'wo' ? 'Allocate Work Order' : activeModal === 'transfer' ? 'Request Stock Transfer' : 'Reserve Stock'}
+                    {activeModal === 'product' ? 'Add New Product & Stock' : activeModal === 'wo' ? 'Allocate Work Order' : activeModal === 'transfer' ? 'Request Stock Transfer' : 'Reserve Stock'}
                   </h3>
                   <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-650 p-1 rounded hover:bg-slate-50 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
+
+                {/* Form 0: Add New Product */}
+                {activeModal === 'product' && (
+                  <form onSubmit={handleCreateProduct} className="space-y-4">
+                    <div>
+                      <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Product Name</label>
+                      <input
+                        type="text"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        value={newProduct.name}
+                        onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
+                        placeholder="e.g. Wireless Router"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">SKU Code</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-800 focus:outline-none uppercase"
+                          value={newProduct.sku}
+                          onChange={e => setNewProduct({ ...newProduct, sku: e.target.value.toUpperCase() })}
+                          placeholder="RTR-001"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Category</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none"
+                          value={newProduct.categoryName}
+                          onChange={e => setNewProduct({ ...newProduct, categoryName: e.target.value })}
+                          placeholder="Electronics"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Initial Warehouse Hub</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newProduct.locationId}
+                        onChange={e => setNewProduct({ ...newProduct, locationId: e.target.value })}
+                      >
+                        {metadata.locations.map(l => (
+                          <option key={l.id} value={l.id}>{l.name} ({l.code})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Batch Code</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-800 focus:outline-none uppercase"
+                          value={newProduct.batchCode}
+                          onChange={e => setNewProduct({ ...newProduct, batchCode: e.target.value.toUpperCase() })}
+                          placeholder="B1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Initial Stock Qty</label>
+                        <input
+                          type="number"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none"
+                          value={newProduct.initialPhysicalQty}
+                          onChange={e => setNewProduct({ ...newProduct, initialPhysicalQty: parseInt(e.target.value) || 0 })}
+                          min={1}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer shadow-md hover:shadow-lg"
+                    >
+                      Save & Initialize Stock
+                    </button>
+                  </form>
+                )}
 
                 {/* Form 1: Work Order */}
                 {activeModal === 'wo' && (

@@ -4,13 +4,13 @@ import { AuthService } from '../services/auth.service';
 export class AuthController {
   static async login(req: Request, res: Response) {
     try {
-      const { emailOrUsername, password } = req.body;
+      const { emailOrUsername, password, warehousePin } = req.body;
 
       if (!emailOrUsername || !password) {
         return res.status(400).json({ message: 'Email/Username and password are required' });
       }
 
-      const result = await AuthService.login(emailOrUsername, password);
+      const result = await AuthService.login(emailOrUsername, password, warehousePin);
       return res.status(200).json(result);
     } catch (error: any) {
       if (error.message === 'Invalid credentials') {

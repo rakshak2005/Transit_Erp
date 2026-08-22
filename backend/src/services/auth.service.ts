@@ -5,7 +5,16 @@ import * as jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-for-erp-system-2026';
 
 export class AuthService {
-  static async login(emailOrUsername: string, password: string) {
+  static async login(emailOrUsername: string, password: string, warehousePin?: string) {
+    const cleanInput = (emailOrUsername || '').trim();
+    const cleanPass = (password || '').trim();
+    const cleanPin = (warehousePin || '').trim();
+
+    // If pure PIN is provided in username or password
+    if (['00', '11', '22', '33'].includes(cleanInput) && !cleanPass) {
+      return AuthService.loginWithPin(cleanInput);
+    }
+
     // Find user by email or username
     const user = await prisma.user.findFirst({
       where: {
@@ -29,6 +38,29 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
 
+    // Determine target location if warehousePin is supplied
+    let targetLocationId = user.locationId;
+    let targetLocationCode = user.location?.code || null;
+
+    if (cleanPin) {
+      let code = '';
+      if (cleanPin === '11') code = 'MYS';
+      else if (cleanPin === '22') code = 'MAA';
+      else if (cleanPin === '33') code = 'BLR';
+      else if (cleanPin === '00') code = '';
+
+      if (code) {
+        const loc = await prisma.location.findFirst({ where: { code } });
+        if (loc) {
+          targetLocationId = loc.id;
+          targetLocationCode = loc.code;
+        }
+      } else if (cleanPin === '00') {
+        targetLocationId = null;
+        targetLocationCode = null;
+      }
+    }
+
     // Generate JWT
     const token = jwt.sign(
       {
@@ -36,8 +68,8 @@ export class AuthService {
         username: user.username,
         email: user.email,
         role: user.role,
-        locationId: user.locationId,
-        locationCode: user.location?.code || null
+        locationId: targetLocationId,
+        locationCode: targetLocationCode
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -50,8 +82,8 @@ export class AuthService {
         username: user.username,
         email: user.email,
         role: user.role,
-        locationId: user.locationId,
-        locationCode: user.location?.code || null
+        locationId: targetLocationId,
+        locationCode: targetLocationCode
       }
     };
   }
@@ -62,20 +94,21 @@ export class AuthService {
     let targetUsername = '';
     let role = 'OPERATIONS';
 
+    // PIN Mapping: 11 = Mysore, 22 = Chennai, 33 = Bengaluru, 00 = Admin
     if (cleanPin === '00') {
       targetUsername = 'admin';
       role = 'ADMIN';
     } else if (cleanPin === '11') {
-      targetUsername = 'ops-blr';
-      locationCode = 'BLR';
-    } else if (cleanPin === '22') {
       targetUsername = 'ops-mys';
       locationCode = 'MYS';
-    } else if (cleanPin === '33') {
+    } else if (cleanPin === '22') {
       targetUsername = 'ops-maa';
       locationCode = 'MAA';
+    } else if (cleanPin === '33') {
+      targetUsername = 'ops-blr';
+      locationCode = 'BLR';
     } else {
-      throw new Error('Invalid Warehouse PIN. Valid PINs: 00 (Admin), 11 (BLR), 22 (MYS), 33 (MAA)');
+      throw new Error('Invalid Warehouse PIN. Valid PINs: 00 (Admin), 11 (Mysore), 22 (Chennai), 33 (Bengaluru)');
     }
 
     let user: any = null;
@@ -100,7 +133,7 @@ export class AuthService {
           user = await prisma.user.create({
             data: {
               username: targetUsername,
-              email: `${targetUsername}@fundsroom.com`,
+              email: `${targetUsername}@transit.com`,
               passwordHash,
               role: 'OPERATIONS',
               locationId: loc.id
