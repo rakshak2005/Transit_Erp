@@ -541,8 +541,9 @@ export default function App() {
           {/* Center: Hero Typography & Developer Mode Card */}
           <div className="my-auto py-4 space-y-5 max-w-xl z-10 relative">
             {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-[11px] font-mono font-bold tracking-wide">
-              <span>Autonomous Supply Chain & Logistics</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-indigo-500/15 via-blue-500/15 to-cyan-500/15 border border-indigo-500/30 text-indigo-300 text-[11px] font-mono font-bold tracking-wide shadow-[0_0_15px_rgba(99,102,241,0.15)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping" />
+              <span>Next-Gen Autonomous Supply Network</span>
             </div>
 
             {/* Main Headline */}
@@ -552,8 +553,10 @@ export default function App() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-3xl lg:text-[44px] font-black tracking-tight leading-[1.08] text-white"
             >
-              Move Freight.<br />
-              <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-cyan-300 bg-clip-text text-transparent">Manage Everything.</span>
+              Command Every Hub.<br />
+              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(56,189,248,0.25)]">
+                Sync Every Transit.
+              </span>
             </motion.h1>
 
             <motion.p
@@ -562,7 +565,7 @@ export default function App() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-slate-400 text-xs lg:text-sm leading-relaxed font-medium"
             >
-              One unified platform for real-time inventory allocation, automated work orders, and inter-hub dispatch tracking.
+              Hyper-scalable warehouse intelligence connecting real-time inventory reserves, automated work orders, and instant inter-hub dispatch across all enterprise branches.
             </motion.p>
 
             {/* Developer Mode Terminal Notification (Dismissible with Into / X mark) */}
@@ -764,7 +767,6 @@ export default function App() {
               <div className="space-y-1.5">
                 <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1 flex items-center justify-between">
                   <span>Warehouse Branch PIN</span>
-                  <span className="text-indigo-600 font-mono text-[10px]">Mysore: 11 | Chennai: 22 | BLR: 33</span>
                 </label>
                 <input
                   type="text"
