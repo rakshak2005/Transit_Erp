@@ -46,7 +46,7 @@ interface UserInfo {
 
 const getApiBase = () => {
   const envUrl = import.meta.env.VITE_API_URL;
-  if (!envUrl) return 'http://localhost:5000/api';
+  if (!envUrl) return 'https://transit-erp.onrender.com/api';
   const cleanUrl = envUrl.trim().replace(/\/+$/, '');
   return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
 };
