@@ -10,12 +10,12 @@ export class AuthService {
     const cleanPass = (password || '').trim();
     const cleanPin = (warehousePin || '').trim();
 
-    // If pure PIN is provided in username or password
+    
     if (['00', '11', '22', '33'].includes(cleanInput) && !cleanPass) {
       return AuthService.loginWithPin(cleanInput);
     }
 
-    // Find user by email or username
+    
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -32,13 +32,13 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
 
-    // Check password
+    
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new Error('Invalid credentials');
     }
 
-    // Determine target location if warehousePin is supplied
+    
     let targetLocationId = user.locationId;
     let targetLocationCode = user.location?.code || null;
 
@@ -61,7 +61,7 @@ export class AuthService {
       }
     }
 
-    // Generate JWT
+    
     const token = jwt.sign(
       {
         id: user.id,
@@ -94,7 +94,7 @@ export class AuthService {
     let targetUsername = '';
     let role = 'OPERATIONS';
 
-    // PIN Mapping: 11 = Mysore, 22 = Chennai, 33 = Bengaluru, 00 = Admin
+    
     if (cleanPin === '00') {
       targetUsername = 'admin';
       role = 'ADMIN';

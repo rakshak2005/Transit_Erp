@@ -12,7 +12,7 @@ export class WorkOrderService {
       throw new Error('Required quantity must be greater than zero.');
     }
 
-    // Verify assigned user exists
+    
     const user = await prisma.user.findUnique({
       where: { id: data.assignedUserId },
     });
@@ -20,7 +20,7 @@ export class WorkOrderService {
       throw new Error('Assigned user not found.');
     }
 
-    // Verify item and location exist
+    
     const item = await prisma.item.findUnique({ where: { id: data.itemId } });
     if (!item) {
       throw new Error('Item not found.');
@@ -62,10 +62,10 @@ export class WorkOrderService {
       },
     });
 
-    // Calculate shortage dynamically for each work order
+    
     const result = [];
     for (const wo of workOrders) {
-      // Find all inventories for this item at this location across all batches
+      
       const inventories = await prisma.inventory.findMany({
         where: {
           itemId: wo.itemId,

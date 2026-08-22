@@ -19,7 +19,7 @@ async function seedNeon() {
   await client.connect();
   console.log('Connected to Neon PostgreSQL successfully!');
 
-  // Create extensions & enums if not exist
+  
   await client.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
 
   await client.query(`

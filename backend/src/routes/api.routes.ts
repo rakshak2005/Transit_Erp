@@ -9,7 +9,6 @@ import prisma from '../config/db';
 
 const router = Router();
 
-// Helper to get dropdown/reference data for screens
 router.get('/meta', authenticate, async (req, res) => {
   try {
     const locations = await prisma.location.findMany();
@@ -23,7 +22,6 @@ router.get('/meta', authenticate, async (req, res) => {
   }
 });
 
-// Product / Item Creation Route
 router.post(
   '/products',
   authenticate,
@@ -35,7 +33,7 @@ router.post(
         return res.status(400).json({ message: 'Item name and SKU are required' });
       }
 
-      // Find or create category
+      
       const targetCatName = categoryName?.trim() || 'General';
       let category = await prisma.category.findFirst({
         where: { name: { equals: targetCatName, mode: 'insensitive' } }
@@ -44,7 +42,7 @@ router.post(
         category = await prisma.category.create({ data: { name: targetCatName } });
       }
 
-      // Check if item with sku exists or create it
+      
       let item = await prisma.item.findUnique({ where: { sku } });
       if (!item) {
         item = await prisma.item.create({
@@ -56,7 +54,7 @@ router.post(
         });
       }
 
-      // If locationId provided, create inventory record
+      
       if (locationId) {
         await prisma.inventory.create({
           data: {
@@ -77,7 +75,6 @@ router.post(
   }
 );
 
-// Inventory Routes
 router.get(
   '/inventory',
   authenticate,
@@ -91,7 +88,6 @@ router.put(
   InventoryController.updatePhysicalQty
 );
 
-// Work Order Routes
 router.post(
   '/work-orders',
   authenticate,
@@ -110,7 +106,6 @@ router.patch(
   WorkOrderController.updateStatus
 );
 
-// Transfer Routes
 router.post(
   '/transfers',
   authenticate,
@@ -148,7 +143,6 @@ router.patch(
   TransferController.receive
 );
 
-// Customer Order Routes
 router.post(
   '/orders',
   authenticate,

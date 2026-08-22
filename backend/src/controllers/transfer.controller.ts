@@ -6,7 +6,7 @@ export class TransferController {
     try {
       let { sourceLocationId, destLocationId, itemId, quantity } = req.body;
 
-      // If user is restricted to a warehouse hub, source must be their assigned branch
+      
       const user = (req as any).user;
       if (user?.locationId) {
         if (sourceLocationId && sourceLocationId !== user.locationId) {
@@ -54,7 +54,7 @@ export class TransferController {
 
   static async dispatch(req: Request, res: Response) {
     try {
-      const { id } = req.body; // PDF states: PATCH /dispatch has id in body or params. Let's support body first.
+      const { id } = req.body; 
       const transferId = id || req.params.id;
 
       if (!transferId) {

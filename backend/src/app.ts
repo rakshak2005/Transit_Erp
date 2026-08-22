@@ -13,14 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// API Swagger Docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// API base routing
 app.use('/api', authRoutes);
 app.use('/api', apiRoutes);
 
-// General health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
 });

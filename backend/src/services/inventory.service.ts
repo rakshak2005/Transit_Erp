@@ -13,7 +13,7 @@ export class InventoryService {
       },
     });
 
-    // Dynamically map and calculate availableQty
+    
     return inventories.map((inv) => ({
       id: inv.id,
       itemId: inv.itemId,

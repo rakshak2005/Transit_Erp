@@ -7,7 +7,7 @@ export class WorkOrderController {
     try {
       let { locationId, itemId, requiredQty, assignedUserId } = req.body;
 
-      // If user is restricted to a warehouse hub, force and enforce their location
+      
       const user = (req as any).user;
       if (user?.locationId) {
         if (locationId && locationId !== user.locationId) {

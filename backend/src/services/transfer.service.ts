@@ -56,7 +56,7 @@ export class TransferService {
 
   static async dispatch(id: string) {
     return prisma.$transaction(async (tx) => {
-      // Find transfer
+      
       const transfer = await tx.stockTransfer.findUnique({
         where: { id },
       });
@@ -69,7 +69,7 @@ export class TransferService {
         throw new Error('Only requested transfers can be dispatched.');
       }
 
-      // Find available source inventory records for this item at sourceLocation
+      
       const sourceInventories = await tx.inventory.findMany({
         where: {
           itemId: transfer.itemId,
@@ -77,7 +77,7 @@ export class TransferService {
         },
       });
 
-      // Find a batch that has enough available inventory
+      
       const batchWithStock = sourceInventories.find(
         (inv) => inv.physicalQty - inv.reservedQty >= transfer.quantity
       );
@@ -86,7 +86,7 @@ export class TransferService {
         throw new Error('Cannot transfer more than available inventory.');
       }
 
-      // Reduce source physical stock
+      
       await tx.inventory.update({
         where: { id: batchWithStock.id },
         data: {
@@ -94,7 +94,7 @@ export class TransferService {
         },
       });
 
-      // Update transfer status and record batchCode
+      
       return tx.stockTransfer.update({
         where: { id },
         data: {
@@ -134,7 +134,7 @@ export class TransferService {
 
       const batchCode = transfer.batchCode as string;
 
-      // Check if destination inventory record exists for this item and batch
+      
       let destInventory = await tx.inventory.findFirst({
         where: {
           itemId: transfer.itemId,
@@ -144,7 +144,7 @@ export class TransferService {
       });
 
       if (destInventory) {
-        // Update destination stock
+        
         await tx.inventory.update({
           where: { id: destInventory.id },
           data: {
@@ -152,7 +152,7 @@ export class TransferService {
           },
         });
       } else {
-        // Create new destination inventory record
+        
         await tx.inventory.create({
           data: {
             itemId: transfer.itemId,
@@ -165,7 +165,7 @@ export class TransferService {
         });
       }
 
-      // Update transfer status
+      
       return tx.stockTransfer.update({
         where: { id },
         data: {

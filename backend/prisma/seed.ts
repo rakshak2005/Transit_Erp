@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
-  // 1. Clean existing data
+  
   await prisma.inventory.deleteMany();
   await prisma.workOrder.deleteMany();
   await prisma.stockTransfer.deleteMany();
@@ -16,7 +16,7 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.location.deleteMany();
 
-  // 2. Create Locations
+  
   const blr = await prisma.location.create({
     data: { name: 'Bangalore', code: 'BLR' },
   });
@@ -27,7 +27,7 @@ async function main() {
     data: { name: 'Chennai', code: 'MAA' },
   });
 
-  // 3. Create Categories
+  
   const electronics = await prisma.category.create({
     data: { name: 'Electronics' },
   });
@@ -38,7 +38,7 @@ async function main() {
     data: { name: 'Raw Material' },
   });
 
-  // 4. Create Items
+  
   const laptop = await prisma.item.create({
     data: { name: 'Laptop', sku: 'LAP-001', categoryId: electronics.id },
   });
@@ -49,12 +49,12 @@ async function main() {
     data: { name: 'Steel Rod', sku: 'ROD-001', categoryId: rawMaterial.id },
   });
 
-  // 5. Hash Passwords
+  
   const adminPasswordHash = await bcrypt.hash('admin123', 10);
   const opsPasswordHash = await bcrypt.hash('ops123', 10);
   const salesPasswordHash = await bcrypt.hash('sales123', 10);
 
-  // 6. Create Users
+  
   const admin = await prisma.user.create({
     data: {
       username: 'admin',
@@ -70,7 +70,7 @@ async function main() {
       email: 'ops@transit.com',
       passwordHash: opsPasswordHash,
       role: UserRole.OPERATIONS,
-      locationId: blr.id, // assigned to Bangalore
+      locationId: blr.id, 
     },
   });
 
@@ -90,7 +90,7 @@ async function main() {
       email: 'ops-mys@transit.com',
       passwordHash: opsPasswordHash,
       role: UserRole.OPERATIONS,
-      locationId: mys.id, // assigned to Mysore
+      locationId: mys.id, 
     },
   });
 
@@ -100,7 +100,7 @@ async function main() {
       email: 'ops-maa@transit.com',
       passwordHash: opsPasswordHash,
       role: UserRole.OPERATIONS,
-      locationId: maa.id, // assigned to Chennai
+      locationId: maa.id, 
     },
   });
 
@@ -113,7 +113,7 @@ async function main() {
     },
   });
 
-  // 7. Create Inventory
+  
   await prisma.inventory.createMany({
     data: [
       {
@@ -121,7 +121,7 @@ async function main() {
         locationId: blr.id,
         batchCode: 'B1',
         physicalQty: 100,
-        reservedQty: 30, // Available = 70
+        reservedQty: 30, 
         updatedAt: new Date(),
       },
       {
@@ -129,7 +129,7 @@ async function main() {
         locationId: mys.id,
         batchCode: 'B2',
         physicalQty: 50,
-        reservedQty: 10, // Available = 40
+        reservedQty: 10, 
         updatedAt: new Date(),
       },
       {
@@ -137,7 +137,7 @@ async function main() {
         locationId: maa.id,
         batchCode: 'B3',
         physicalQty: 200,
-        reservedQty: 50, // Available = 150
+        reservedQty: 50, 
         updatedAt: new Date(),
       },
       {
@@ -145,7 +145,7 @@ async function main() {
         locationId: maa.id,
         batchCode: 'B4',
         physicalQty: 60,
-        reservedQty: 0, // Available = 60
+        reservedQty: 0, 
         updatedAt: new Date(),
       },
     ],

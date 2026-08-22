@@ -59,20 +59,20 @@ export default function App() {
     localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null
   );
 
-  // Authentication states
+  
   const [loginInput, setLoginInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [warehousePinInput, setWarehousePinInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [showDevPanel, setShowDevPanel] = useState(false);
 
-  // UI layout states
+  
   const [activeTab, setActiveTab] = useState<'inventory' | 'work-orders' | 'transfers' | 'orders'>('inventory');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeWorkspace] = useState('Transit ERP Logistics');
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
-  // Search & filters
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -81,7 +81,7 @@ export default function App() {
   const [woWarehouse, setWoWarehouse] = useState('');
   const [transferWarehouse, setTransferWarehouse] = useState('');
 
-  // Metadata & Content states
+  
   const [metadata, setMetadata] = useState<{
     locations: { id: string; name: string; code: string }[];
     items: { id: string; name: string; sku: string }[];
@@ -93,27 +93,27 @@ export default function App() {
   const [transfers, setTransfers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
 
-  // Alerts
+  
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Radial FAB state
+  
   const [isRadialOpen, setIsRadialOpen] = useState(false);
 
-  // Forms
+  
   const [newWO, setNewWO] = useState({ locationId: '', itemId: '', requiredQty: 0, assignedUserId: '' });
   const [newTransfer, setNewTransfer] = useState({ sourceLocationId: '', destLocationId: '', itemId: '', quantity: 0 });
   const [newOrder, setNewOrder] = useState({ itemId: '', locationId: '', quantity: 0, companyName: '' });
   const [newProduct, setNewProduct] = useState({ name: '', sku: '', categoryName: 'Electronics', locationId: '', batchCode: 'B1', initialPhysicalQty: 50 });
 
-  // Quick view Side Drawer
+  
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
   const [editingPhysicalQty, setEditingPhysicalQty] = useState<number>(0);
 
-  // Form Modals (via overlay state)
+  
   const [activeModal, setActiveModal] = useState<null | 'wo' | 'transfer' | 'order' | 'product'>(null);
 
-  // Tick time
+  
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date().toLocaleTimeString());
@@ -121,7 +121,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Auto clear notifications
+  
   useEffect(() => {
     if (successMsg || errorMsg) {
       const t = setTimeout(() => {
@@ -132,7 +132,7 @@ export default function App() {
     }
   }, [successMsg, errorMsg]);
 
-  // Load content & apply warehouse restrictions
+  
   useEffect(() => {
     if (token) {
       fetchMetadata();
@@ -279,7 +279,7 @@ export default function App() {
     }
   };
 
-  // Actions
+  
   const handleUpdateInventory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRow) return;
@@ -408,7 +408,7 @@ export default function App() {
     }
   };
 
-  // Filtering Inventory list
+  
   const filteredInventory = useMemo(() => {
     return inventory.filter(inv => {
       const matchesSearch = inv.itemName.toLowerCase().includes(searchTerm.toLowerCase()) || inv.sku.toLowerCase().includes(searchTerm.toLowerCase());
@@ -419,7 +419,7 @@ export default function App() {
     });
   }, [inventory, searchTerm, selectedCategory, selectedLocation, selectedBatch]);
 
-  // Metric computations
+  
   const metrics = useMemo(() => {
     const totalPhysical = inventory.reduce((sum, inv) => sum + inv.physicalQty, 0);
     const totalReserved = inventory.reduce((sum, inv) => sum + inv.reservedQty, 0);
@@ -428,7 +428,7 @@ export default function App() {
     return { totalPhysical, totalReserved, activeWorkOrders, pendingTransfers };
   }, [inventory, workOrders, transfers]);
 
-  // Chart Data preparation
+  
   const locationChartData = useMemo(() => {
     const locMap: { [key: string]: number } = {};
     inventory.forEach(inv => {
@@ -447,7 +447,7 @@ export default function App() {
     return Object.keys(catMap).map(key => ({ name: key, value: catMap[key] }));
   }, [inventory]);
 
-  // Timeline
+  
   const timelineData = useMemo(() => {
     const list: any[] = [];
     transfers.forEach(tr => {
@@ -480,25 +480,25 @@ export default function App() {
     return list.slice(0, 5);
   }, [transfers, orders, workOrders]);
 
-  // Login view
+  
   if (!token || !user) {
     return (
       <div className="h-screen w-screen flex flex-col lg:flex-row bg-[#F8FAFC] relative overflow-hidden font-sans">
-        {/* Background Dot Grid */}
+        {}
         <div className="absolute inset-0 z-0 opacity-[0.05]" style={{
           backgroundImage: 'radial-gradient(#4f46e5 1.5px, transparent 1.5px)',
           backgroundSize: '32px 32px'
         }} />
 
-        {/* Left Side: Cohesive Enterprise Hero Section (Dark Indigo Theme) */}
+        {}
         <div className="lg:w-[55%] bg-[#080D1A] relative flex flex-col justify-between p-8 lg:p-12 xl:p-14 text-white overflow-hidden shrink-0 h-full border-b lg:border-b-0 lg:border-r border-slate-800/60">
-          {/* Ambient Lighting & Glows */}
+          {}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-950/50 via-[#080D1A] to-[#080D1A] z-0" />
           <div className="absolute -top-24 -left-24 w-80 h-80 bg-blue-600/15 rounded-full blur-[100px] z-0 pointer-events-none" />
           <div className="absolute top-1/2 -left-20 w-72 h-72 bg-cyan-500/10 rounded-full blur-[90px] z-0 pointer-events-none" />
           <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-indigo-600/15 rounded-full blur-[100px] z-0 pointer-events-none" />
 
-          {/* Top: Seamless Brand Header */}
+          {}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -506,7 +506,7 @@ export default function App() {
             className="flex items-center justify-between z-10 w-full"
           >
             <div className="flex items-center gap-4">
-              {/* Vibrant Ambient Glow Logo Emblem */}
+              {}
               <div className="relative flex items-center justify-center group cursor-pointer">
                 <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-500 rounded-full blur-lg opacity-40 group-hover:opacity-75 transition-opacity duration-500 animate-pulse pointer-events-none" />
                 <img
@@ -516,7 +516,7 @@ export default function App() {
                 />
               </div>
 
-              {/* Brand Typography */}
+              {}
               <div>
                 <div className="flex items-center gap-2.5">
                   <span className="font-black text-2xl tracking-tight text-white font-sans">
@@ -531,22 +531,22 @@ export default function App() {
               </div>
             </div>
 
-            {/* Live System Indicator */}
+            {}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] font-mono text-emerald-400 shadow-sm">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>LIVE CLOUD</span>
             </div>
           </motion.div>
 
-          {/* Center: Hero Typography & Developer Mode Card */}
+          {}
           <div className="my-auto py-4 space-y-5 max-w-xl z-10 relative">
-            {/* Pill Badge */}
+            {}
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-indigo-500/15 via-blue-500/15 to-cyan-500/15 border border-indigo-500/30 text-indigo-300 text-[11px] font-mono font-bold tracking-wide shadow-[0_0_15px_rgba(99,102,241,0.15)]">
               <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping" />
               <span>Next-Gen Autonomous Supply Network</span>
             </div>
 
-            {/* Main Headline */}
+            {}
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -568,7 +568,7 @@ export default function App() {
               Hyper-scalable warehouse intelligence connecting real-time inventory reserves, automated work orders, and instant inter-hub dispatch across all enterprise branches.
             </motion.p>
 
-            {/* Developer Mode Terminal Notification (Dismissible with Into / X mark) */}
+            {}
             <AnimatePresence>
               {showDevPanel ? (
                 <motion.div
@@ -578,10 +578,10 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                   className="rounded-2xl bg-[#090E17]/95 border border-emerald-500/30 p-4 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(16,185,129,0.1)] font-mono text-left relative overflow-hidden"
                 >
-                  {/* Top Scanline glow */}
+                  {}
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-500 via-cyan-400 to-indigo-500 animate-pulse" />
 
-                  {/* Terminal Header Bar */}
+                  {}
                   <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800/80 mb-2.5">
                     <div className="flex items-center gap-2">
                       <div className="flex gap-1.5 items-center">
@@ -602,12 +602,11 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Prompt */}
+                  {}
 
-
-                  {/* Exactly 3 Interactive Terminal Rows */}
+                  {}
                   <div className="space-y-2">
-                    {/* 1. Admin */}
+                    {}
                     <button
                       type="button"
                       onClick={() => {
@@ -631,7 +630,7 @@ export default function App() {
                       </div>
                     </button>
 
-                    {/* 2. Operations */}
+                    {}
                     <button
                       type="button"
                       onClick={() => {
@@ -655,7 +654,7 @@ export default function App() {
                       </div>
                     </button>
 
-                    {/* 3. Sales */}
+                    {}
                     <button
                       type="button"
                       onClick={() => {
@@ -696,7 +695,7 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-          {/* Bottom: Clean System Telemetry Footer */}
+          {}
           <div className="flex items-center justify-between text-slate-400 text-xs font-mono z-10 pt-3 border-t border-slate-800/60">
             <div className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
@@ -706,9 +705,9 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right Side: Clean Full Glassmorphism Sign In Card */}
+        {}
         <div className="flex-1 flex items-center justify-center p-6 lg:p-12 z-10 relative">
-          {/* Subtle Ambient Glow Behind Card */}
+          {}
           <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-[100px] pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/3 w-72 h-72 bg-blue-500/15 rounded-full blur-[90px] pointer-events-none" />
 
@@ -718,10 +717,10 @@ export default function App() {
             transition={{ duration: 0.5 }}
             className="w-full max-w-[460px] p-8 lg:p-10 rounded-[32px] border border-white/80 shadow-[0_30px_90px_rgba(79,70,229,0.18),0_15px_35px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(255,255,255,1)] bg-white/75 backdrop-blur-[30px] relative overflow-hidden"
           >
-            {/* Top Glass Shimmer Line */}
+            {}
             <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
 
-            {/* Header */}
+            {}
             <div className="mb-6">
               <h2 className="text-3xl font-black text-slate-900 tracking-tight">Sign In</h2>
               <p className="text-slate-500 text-xs mt-1 font-semibold uppercase tracking-wider">
@@ -729,7 +728,7 @@ export default function App() {
               </p>
             </div>
 
-            {/* Unified Form (Supports email/password & warehouse PIN) */}
+            {}
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">
@@ -763,7 +762,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Warehouse PIN Input & Quick Selector */}
+              {}
               <div className="space-y-1.5">
                 <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1 flex items-center justify-between">
                   <span>Warehouse Branch PIN</span>
@@ -777,7 +776,7 @@ export default function App() {
                   onChange={e => setWarehousePinInput(e.target.value)}
                 />
 
-                {/* Quick warehouse pill buttons */}
+                {}
                 <div className="grid grid-cols-4 gap-1.5 pt-1">
                   <button
                     type="button"
@@ -837,7 +836,7 @@ export default function App() {
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </button>
 
-              {/* Developer Mode Live Notice below Login Button */}
+              {}
               <div className="pt-3 mt-3 border-t border-slate-200/70 flex flex-col items-center gap-1 text-center">
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-2 w-2 shrink-0">
@@ -862,13 +861,13 @@ export default function App() {
       <div className="aurora-glow"></div>
       <div className="noise-overlay"></div>
 
-      {/* Floating Light Sidebar */}
+      {}
       <aside
         className={`bg-white/90 backdrop-blur-2xl border-r border-slate-200/80 p-5 flex flex-col justify-between transition-all duration-300 z-30 shadow-sm h-screen shrink-0 overflow-hidden ${isSidebarCollapsed ? 'w-20' : 'w-64'
           }`}
       >
         <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
-          {/* Logo / Transit ERP Branding */}
+          {}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Transit ERP Logo" className="h-9 object-contain" />
@@ -886,7 +885,7 @@ export default function App() {
             </button>
           </div>
 
-          {/* Workspace Switcher */}
+          {}
           {!isSidebarCollapsed && (
             <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-2.5">
               <Briefcase className="h-4 w-4 text-indigo-600" />
@@ -894,7 +893,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Navigation Items */}
+          {}
           <nav className="space-y-1.5">
             {(user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
               <button
@@ -948,7 +947,7 @@ export default function App() {
           </nav>
         </div>
 
-        {/* User Card */}
+        {}
         <div className="border-t border-slate-200 pt-4">
           <div className="flex items-center gap-3 mb-4 px-2">
             <div className="h-9 w-9 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center relative">
@@ -972,9 +971,9 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Main Panel */}
+      {}
       <div className="flex-1 overflow-y-auto h-screen">
-        {/* Alerts */}
+        {}
         <AnimatePresence>
           {successMsg && (
             <motion.div
@@ -1000,7 +999,7 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Command Center Header */}
+        {}
         <div className="max-w-7xl mx-auto px-6 md:px-8 pb-0 pt-6 space-y-8">
           <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-5 rounded-[24px] border border-slate-200/80 shadow-sm backdrop-blur-md">
             <div>
@@ -1025,7 +1024,7 @@ export default function App() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3.5">
-              {/* Clock */}
+              {}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[16px] text-xs font-bold text-slate-600">
                 <Clock className="h-3.5 w-3.5 text-indigo-600" />
                 <span>{currentTime}</span>
@@ -1054,10 +1053,10 @@ export default function App() {
             </div>
           </header>
 
-          {/* TAB 1: Inventory Table & Search (With KPIs and Analytics Console) */}
+          {}
           {activeTab === 'inventory' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
             <div className="space-y-8">
-              {/* 4 KPI Metric Cards */}
+              {}
               <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {[
                   {
@@ -1097,7 +1096,7 @@ export default function App() {
                     </div>
                     <div className="mt-4 flex items-end justify-between">
                       <span className="text-[10px] text-slate-400 font-bold">{card.desc}</span>
-                      {/* Micro sparkline */}
+                      {}
                       <svg className="w-16 h-8 text-blue-600 stroke-current fill-none stroke-[2]" viewBox="0 0 70 30">
                         <path d={card.sparkline.reduce((acc, val, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${i * 10} ${30 - val / 3}`, '')} />
                       </svg>
@@ -1106,10 +1105,10 @@ export default function App() {
                 ))}
               </section>
 
-              {/* Analytics & Activity Split Console */}
+              {}
               <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
                 <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Chart 1: Stock by Location */}
+                  {}
                   <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
                     <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-blue-600" />
@@ -1131,7 +1130,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Chart 2: Category Distribution */}
+                  {}
                   <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
                     <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
                       <Layers className="h-4 w-4 text-indigo-600" />
@@ -1160,7 +1159,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Activity Timeline */}
+                {}
                 <div className="glass-card rounded-[24px] p-6 space-y-6 shadow-sm bg-white border border-slate-200">
                   <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
                     <History className="h-4 w-4 text-cyan-600" />
@@ -1190,7 +1189,7 @@ export default function App() {
                 </div>
               </section>
 
-              {/* Filter Console */}
+              {}
               <div className="bg-white border border-slate-200 rounded-[24px] p-4 flex flex-wrap items-center gap-4 justify-between shadow-sm">
                 <div className="flex flex-wrap items-center gap-3.5 flex-1 min-w-[280px]">
                   <div className="relative flex-1 max-w-sm">
@@ -1258,7 +1257,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Table */}
+              {}
               <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -1325,11 +1324,11 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 2: Work Orders */}
+          {}
           {activeTab === 'work-orders' && (
             <div className="space-y-8">
 
-              {/* Warehouse Selector + Stock Summary */}
+              {}
               <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                   <div>
@@ -1351,7 +1350,7 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Warehouse Buttons */}
+                {}
                 <div className="flex flex-wrap items-center gap-2 mb-6">
                   <button
                     onClick={() => setWoWarehouse('')}
@@ -1388,7 +1387,7 @@ export default function App() {
                   })}
                 </div>
 
-                {/* Stock Summary for Selected Warehouse */}
+                {}
                 <div className="border border-slate-100 rounded-xl overflow-hidden mb-6">
                   <div className="p-3 bg-slate-50/80 border-b border-slate-100">
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -1437,7 +1436,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Work Orders Table */}
+              {}
               <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
                 <div className="p-5 border-b border-slate-100 bg-white">
                   <h3 className="font-extrabold text-slate-800 text-lg">
@@ -1513,10 +1512,10 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 3: Stock Transfers */}
+          {}
           {activeTab === 'transfers' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
             <div className="space-y-8">
-              {/* Warehouse Inventory Overview for Transfers */}
+              {}
               <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                   <div>
@@ -1548,7 +1547,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Stock Table */}
+                {}
                 <div className="border border-slate-100 rounded-xl overflow-hidden">
                   <div className="p-3 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -1628,7 +1627,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Active Transfers Table */}
+              {}
               <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
                 <div className="p-5 border-b border-slate-100 bg-white">
                   <h3 className="font-extrabold text-slate-800 text-lg">Active Stock Transfers</h3>
@@ -1693,11 +1692,11 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 4: Customer Orders */}
+          {}
           {activeTab === 'orders' && (user.role === 'ADMIN' || user.role === 'SALES') && (
             <div className="space-y-8">
 
-              {/* Warehouse Inventory Reservation Section */}
+              {}
               <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                   <div>
@@ -1832,7 +1831,7 @@ export default function App() {
 
         </div>
 
-        {/* Radial Quick Action FAB */}
+        {}
         <div className="fixed bottom-6 right-6 z-40">
           <motion.button
             onClick={() => setIsRadialOpen(!isRadialOpen)}
@@ -1885,7 +1884,7 @@ export default function App() {
           </AnimatePresence>
         </div>
 
-        {/* Row details side drawer */}
+        {}
         <AnimatePresence>
           {selectedRow && (
             <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex justify-end">
@@ -1972,7 +1971,7 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Action Modals */}
+        {}
         <AnimatePresence>
           {activeModal && (
             <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1992,7 +1991,7 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* Form 0: Add New Product */}
+                {}
                 {activeModal === 'product' && (
                   <form onSubmit={handleCreateProduct} className="space-y-4">
                     <div>
@@ -2078,7 +2077,7 @@ export default function App() {
                   </form>
                 )}
 
-                {/* Form 1: Work Order */}
+                {}
                 {activeModal === 'wo' && (
                   <form onSubmit={handleCreateWorkOrder} className="space-y-4">
                     <div>
@@ -2142,7 +2141,7 @@ export default function App() {
                   </form>
                 )}
 
-                {/* Form 2: Transfer */}
+                {}
                 {activeModal === 'transfer' && (
                   <form onSubmit={handleCreateTransfer} className="space-y-4">
                     <div>
@@ -2209,7 +2208,7 @@ export default function App() {
                   </form>
                 )}
 
-                {/* Form 3: Customer Order */}
+                {}
                 {activeModal === 'order' && (
                   <form onSubmit={handleCreateOrder} className="space-y-4">
                     <div>

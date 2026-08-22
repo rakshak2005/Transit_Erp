@@ -6,7 +6,7 @@ export class OrderController {
     try {
       let { itemId, locationId, quantity, companyName } = req.body;
 
-      // If user is restricted to a warehouse hub, force and enforce their location
+      
       const user = (req as any).user;
       if (user?.locationId) {
         if (locationId && locationId !== user.locationId) {
