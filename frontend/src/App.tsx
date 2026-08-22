@@ -9,9 +9,7 @@ import {
   ResponsiveContainer,
   PieChart as RePieChart,
   Pie,
-  Cell,
-  AreaChart,
-  Area
+  Cell
 } from 'recharts';
 import {
   Layers,
@@ -25,12 +23,9 @@ import {
   AlertCircle,
   CheckCircle,
   Truck,
-  Check,
   Search,
-  SlidersHorizontal,
   ChevronRight,
   X,
-  Bell,
   Clock,
   ChevronLeft,
   Briefcase,
@@ -48,7 +43,7 @@ interface UserInfo {
   locationCode: string | null;
 }
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#ef4444', '#f59e0b'];
 
 export default function App() {
@@ -65,15 +60,16 @@ export default function App() {
   // UI layout states
   const [activeTab, setActiveTab] = useState<'inventory' | 'work-orders' | 'transfers' | 'orders'>('inventory');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeWorkspace, setActiveWorkspace] = useState('Transit ERP Logistics');
+  const [activeWorkspace] = useState('Transit ERP Logistics');
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
   // Search & filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
-  const [selectedBatch, setSelectedBatch] = useState('');
+  const [selectedBatch] = useState('');
   const [orderWarehouse, setOrderWarehouse] = useState('');
+  const [woWarehouse, setWoWarehouse] = useState('');
 
   // Metadata & Content states
   const [metadata, setMetadata] = useState<{
@@ -425,74 +421,182 @@ export default function App() {
   // Login view
   if (!token || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] px-4 overflow-hidden relative">
-        <div className="animated-bg"></div>
-        <div className="aurora-glow"></div>
-        <div className="noise-overlay"></div>
+      <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8FAFC] relative overflow-hidden font-sans">
+        {/* Background Dot Grid */}
+        <div className="absolute inset-0 z-0 opacity-[0.05]" style={{
+          backgroundImage: 'radial-gradient(#4f46e5 1.5px, transparent 1.5px)',
+          backgroundSize: '32px 32px'
+        }} />
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md bg-white border border-slate-200 rounded-[24px] shadow-xl p-8 relative"
-        >
-          <div className="flex flex-col items-center mb-8">
-            <div className="flex items-center gap-2.5 mb-4">
-              <img src="/logo.png" alt="Transit ERP Logo" className="h-12 object-contain" />
-              <span className="font-extrabold text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">Transit ERP</span>
-            </div>
-            <h2 className="text-xl font-bold text-slate-800">Corporate Login</h2>
-            <p className="text-slate-500 text-xs mt-1">Enterprise credentials required</p>
-          </div>
+        {/* Left Side: Premium Hero Section (Dark Indigo Logistics Theme) */}
+        <div className="lg:w-[55%] bg-[#0F172A] relative flex flex-col justify-between p-8 lg:p-20 text-white overflow-hidden shrink-0 min-h-[350px] lg:min-h-screen border-b lg:border-b-0 lg:border-r border-slate-800/50">
+          {/* Background Gradient Layer */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A] via-[#1E1B4B] to-[#0F172A] z-0" />
+          
+          {/* Aurora Glows */}
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#4F46E5]/15 rounded-full blur-[120px] z-0" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#06B6D4]/10 rounded-full blur-[120px] z-0" />
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-slate-600 text-xs font-bold uppercase tracking-wider mb-2">Username or Email</label>
-              <input
-                type="text"
-                className="w-full bg-white border border-slate-200 rounded-[14px] px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition-all"
-                placeholder="e.g. admin@fundsroom.com"
-                value={loginInput}
-                onChange={e => setLoginInput(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-slate-600 text-xs font-bold uppercase tracking-wider mb-2">Password</label>
-              <input
-                type="password"
-                className="w-full bg-white border border-slate-200 rounded-[14px] px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition-all"
-                placeholder="••••••••"
-                value={passwordInput}
-                onChange={e => setPasswordInput(e.target.value)}
-                required
-              />
-            </div>
+          {/* Top: Logo inside Premium Glass Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-4 bg-white/5 backdrop-blur-[20px] px-6 py-4 rounded-2xl border border-white/[0.08] shadow-[0_20px_60px_rgba(79,70,229,0.2)] w-fit z-10"
+          >
+            <img src="/logo.png" alt="Transit ERP Logo" className="h-10 object-contain" />
+            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">Transit ERP</span>
+          </motion.div>
 
-            {authError && (
-              <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-rose-600 text-xs font-semibold">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{authError}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-[16px] py-3.5 transition-all duration-300 shadow-md cursor-pointer"
+          {/* Center: Hero copy */}
+          <div className="my-auto py-8 space-y-6 max-w-xl z-10 relative">
+            <motion.h1 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl lg:text-[56px] font-black tracking-tight leading-[1.1] text-white"
             >
-              Sign In to System
-            </button>
-          </form>
+              Move Freight.<br />
+              <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#22d3ee] bg-clip-text text-transparent">Manage Everything.</span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-slate-400 text-base lg:text-lg leading-relaxed font-semibold"
+            >
+              One intelligent platform for warehouse operations, inventory management, dispatch tracking, and transport analytics.
+            </motion.p>
 
-          <div className="mt-8 border-t border-slate-100 pt-5 text-center">
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Demo Credentials:</span>
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              <button onClick={() => { setLoginInput('admin@fundsroom.com'); setPasswordInput('admin123'); }} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 p-2 rounded-xl text-xs text-slate-600 cursor-pointer transition">Admin</button>
-              <button onClick={() => { setLoginInput('ops@fundsroom.com'); setPasswordInput('ops123'); }} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 p-2 rounded-xl text-xs text-slate-600 cursor-pointer transition">Ops</button>
-              <button onClick={() => { setLoginInput('sales@fundsroom.com'); setPasswordInput('sales123'); }} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 p-2 rounded-xl text-xs text-slate-600 cursor-pointer transition">Sales</button>
-            </div>
+
+
           </div>
-        </motion.div>
+
+          {/* Bottom: Version info */}
+          <div className="text-slate-500 text-xs font-medium z-10 pt-4">
+            © 2026 Transit ERP Enterprise Terminal. All rights reserved.
+          </div>
+        </div>
+
+        {/* Right Side: Glassmorphism Login Card */}
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 z-10">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-[460px] p-8 lg:p-10 rounded-[28px] border border-white/[0.18] shadow-[0_30px_80px_rgba(15,23,42,0.12),0_0_0_1px_rgba(255,255,255,0.1)_inset] bg-white/[0.65] backdrop-blur-[24px]"
+          >
+            {/* Header */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Sign In</h2>
+              <p className="text-slate-500 text-xs mt-1 font-semibold uppercase tracking-wider">Enter your terminal credentials</p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-1">
+                <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Username / Email</label>
+                <input
+                  type="text"
+                  className="w-full bg-white/50 backdrop-blur-md border border-white/60 rounded-[14px] px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5]/60 focus:ring-4 focus:ring-[#4F46E5]/10 focus:bg-white/70 text-sm transition-all duration-300 shadow-[0_2px_10px_rgba(0,0,0,0.04),inset_0_1px_2px_rgba(255,255,255,0.8)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(255,255,255,0.8)] hover:bg-white/60"
+                  placeholder="name@company.com"
+                  value={loginInput}
+                  onChange={e => setLoginInput(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Password</label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    className="w-full bg-white/50 backdrop-blur-md border border-white/60 rounded-[14px] px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5]/60 focus:ring-4 focus:ring-[#4F46E5]/10 focus:bg-white/70 text-sm transition-all duration-300 pr-12 shadow-[0_2px_10px_rgba(0,0,0,0.04),inset_0_1px_2px_rgba(255,255,255,0.8)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(255,255,255,0.8)] hover:bg-white/60"
+                    placeholder="••••••••"
+                    value={passwordInput}
+                    onChange={e => setPasswordInput(e.target.value)}
+                    required
+                  />
+                  {/* SVG Eye icon to avoid lucide imports */}
+                  <svg className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 hover:text-slate-600 cursor-pointer transition" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between text-xs font-bold px-1">
+                <label className="flex items-center gap-2 text-slate-650 cursor-pointer select-none">
+                  <input type="checkbox" className="rounded border-slate-300 text-[#4F46E5] focus:ring-[#4F46E5]" />
+                  <span>Remember Me</span>
+                </label>
+                <span className="text-[#4F46E5] hover:text-[#2563EB] hover:underline cursor-pointer">
+                  Forgot Password?
+                </span>
+              </div>
+
+              {authError && (
+                <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 rounded-[14px] p-4 text-rose-600 text-xs font-semibold">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              {/* Login Button with gradient & lift hover */}
+              <button
+                type="submit"
+                className="group w-full bg-gradient-to-r from-[#4F46E5] to-[#2563EB] hover:from-[#4338ca] hover:to-[#1d4ed8] text-white font-extrabold rounded-[16px] py-4 transition-all duration-300 shadow-[0_4px_24px_rgba(79,70,229,0.3)] hover:shadow-[0_8px_40px_rgba(79,70,229,0.45)] hover:-translate-y-0.5 cursor-pointer text-sm flex items-center justify-center gap-2 backdrop-blur-sm"
+              >
+                <span>Login</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300/40 to-transparent" />
+              <span className="text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">Role Terminals</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300/40 to-transparent" />
+            </div>
+
+            {/* Quick Access Account Selector */}
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => { setLoginInput('admin@fundsroom.com'); setPasswordInput('admin123'); }}
+                className="bg-white/40 backdrop-blur-md hover:bg-indigo-50/60 border border-white/50 p-3 rounded-2xl text-xs text-slate-600 hover:text-[#4F46E5] cursor-pointer transition-all duration-300 flex flex-col items-center gap-2 hover:border-[#4F46E5]/40 hover:shadow-[0_4px_20px_rgba(79,70,229,0.1)] shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
+              >
+                <div className="h-8 w-8 rounded-full bg-indigo-100/50 flex items-center justify-center">
+                  <User className="h-4 w-4 text-[#4F46E5]" />
+                </div>
+                <span className="font-extrabold text-[10px] uppercase tracking-wider">Admin</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginInput('ops@fundsroom.com'); setPasswordInput('ops123'); }}
+                className="bg-white/40 backdrop-blur-md hover:bg-emerald-50/60 border border-white/50 p-3 rounded-2xl text-xs text-slate-600 hover:text-emerald-700 cursor-pointer transition-all duration-300 flex flex-col items-center gap-2 hover:border-emerald-500/40 hover:shadow-[0_4px_20px_rgba(16,185,129,0.1)] shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
+              >
+                <div className="h-8 w-8 rounded-full bg-emerald-100/50 flex items-center justify-center">
+                  <Truck className="h-4 w-4 text-emerald-600" />
+                </div>
+                <span className="font-extrabold text-[10px] uppercase tracking-wider">Ops</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginInput('sales@fundsroom.com'); setPasswordInput('sales123'); }}
+                className="bg-white/40 backdrop-blur-md hover:bg-violet-50/60 border border-white/50 p-3 rounded-2xl text-xs text-slate-600 hover:text-violet-700 cursor-pointer transition-all duration-300 flex flex-col items-center gap-2 hover:border-violet-500/40 hover:shadow-[0_4px_20px_rgba(139,92,246,0.1)] shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
+              >
+                <div className="h-8 w-8 rounded-full bg-violet-100/50 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-violet-600" />
+                </div>
+                <span className="font-extrabold text-[10px] uppercase tracking-wider">Sales</span>
+              </button>
+            </div>
+
+          </motion.div>
+        </div>
       </div>
     );
   }
@@ -505,9 +609,8 @@ export default function App() {
 
       {/* Floating Light Sidebar */}
       <aside
-        className={`bg-white/90 backdrop-blur-2xl border-r border-slate-200/80 p-5 flex flex-col justify-between transition-all duration-300 z-30 shadow-sm h-screen shrink-0 overflow-hidden ${
-          isSidebarCollapsed ? 'w-20' : 'w-64'
-        }`}
+        className={`bg-white/90 backdrop-blur-2xl border-r border-slate-200/80 p-5 flex flex-col justify-between transition-all duration-300 z-30 shadow-sm h-screen shrink-0 overflow-hidden ${isSidebarCollapsed ? 'w-20' : 'w-64'
+          }`}
       >
         <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
           {/* Logo / Transit ERP Branding */}
@@ -541,11 +644,10 @@ export default function App() {
             {(user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
               <button
                 onClick={() => setActiveTab('inventory')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${
-                  activeTab === 'inventory'
-                    ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${activeTab === 'inventory'
+                  ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
               >
                 <Layers className="h-4 w-4" />
                 {!isSidebarCollapsed && <span>Inventory</span>}
@@ -554,11 +656,10 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('work-orders')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${
-                activeTab === 'work-orders'
-                  ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${activeTab === 'work-orders'
+                ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                }`}
             >
               <FileText className="h-4 w-4" />
               {!isSidebarCollapsed && <span>Work Orders</span>}
@@ -567,11 +668,10 @@ export default function App() {
             {(user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
               <button
                 onClick={() => setActiveTab('transfers')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${
-                  activeTab === 'transfers'
-                    ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${activeTab === 'transfers'
+                  ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
               >
                 <Send className="h-4 w-4" />
                 {!isSidebarCollapsed && <span>Transfers</span>}
@@ -581,11 +681,10 @@ export default function App() {
             {(user.role === 'ADMIN' || user.role === 'SALES') && (
               <button
                 onClick={() => setActiveTab('orders')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${
-                  activeTab === 'orders'
-                    ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${activeTab === 'orders'
+                  ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                  }`}
               >
                 <ShoppingCart className="h-4 w-4" />
                 {!isSidebarCollapsed && <span>Customer Orders</span>}
@@ -648,406 +747,516 @@ export default function App() {
 
         {/* Command Center Header */}
         <div className="max-w-7xl mx-auto px-6 md:px-8 pb-0 pt-6 space-y-8">
-        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-5 rounded-[24px] border border-slate-200/80 shadow-sm backdrop-blur-md">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 capitalize">
-                {activeTab.replace('-', ' ')}
-              </h1>
-              <span className="bg-blue-50 border border-blue-200 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                Live Warehouse Qty
-              </span>
-            </div>
-            <p className="text-slate-500 mt-1 text-sm">Transit ERP Executive Terminal</p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3.5">
-            {/* Clock */}
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[16px] text-xs font-bold text-slate-600">
-              <Clock className="h-3.5 w-3.5 text-indigo-600" />
-              <span>{currentTime}</span>
-            </div>
-
-            <button
-              onClick={fetchTabContent}
-              className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[16px] text-xs font-bold text-slate-700 transition cursor-pointer"
-            >
-              <RefreshCw className="h-3.5 w-3.5 text-blue-600" />
-              <span>Sync</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (user.role === 'ADMIN') setActiveModal('wo');
-                else if (user.role === 'OPERATIONS') setActiveModal('transfer');
-                else if (user.role === 'SALES') setActiveModal('order');
-              }}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-[16px] px-5 py-2.5 text-xs transition cursor-pointer flex items-center gap-2 shadow-sm shadow-blue-500/10"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Action console
-            </button>
-          </div>
-        </header>
-
-        {/* 4 KPI Metric Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            {
-              title: 'Total Stock',
-              value: metrics.totalPhysical,
-              desc: 'Aggregate physical units',
-              sparkline: [20, 30, 45, 35, 60, 50, 80]
-            },
-            {
-              title: 'Reserved Stock',
-              value: metrics.totalReserved,
-              desc: 'Customer committed items',
-              sparkline: [10, 20, 15, 30, 25, 40, 35]
-            },
-            {
-              title: 'Active Work Orders',
-              value: metrics.activeWorkOrders,
-              desc: 'Admin allocated tasks',
-              sparkline: [5, 12, 8, 15, 10, 18, 14]
-            },
-            {
-              title: 'Pending Transfers',
-              value: metrics.pendingTransfers,
-              desc: 'Inter-warehouse transit',
-              sparkline: [2, 4, 3, 7, 5, 8, 6]
-            }
-          ].map((card, idx) => (
-            <motion.div
-              key={idx}
-              whileHover={{ y: -4 }}
-              className="glass-card rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm bg-white border border-slate-200"
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-tr from-transparent to-slate-50 rounded-full pointer-events-none transition group-hover:scale-125" />
-              <div>
-                <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">{card.title}</span>
-                <h3 className="text-3xl font-extrabold text-slate-800 mt-2 tracking-tight">{card.value}</h3>
-              </div>
-              <div className="mt-4 flex items-end justify-between">
-                <span className="text-[10px] text-slate-400 font-bold">{card.desc}</span>
-                {/* Micro sparkline */}
-                <svg className="w-16 h-8 text-blue-600 stroke-current fill-none stroke-[2]" viewBox="0 0 70 30">
-                  <path d={card.sparkline.reduce((acc, val, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${i * 10} ${30 - val / 3}`, '')} />
-                </svg>
-              </div>
-            </motion.div>
-          ))}
-        </section>
-
-        {/* TAB 1: Inventory Table & Search */}
-        {activeTab === 'inventory' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
-          <div className="space-y-6">
-            {/* Filter Console */}
-            <div className="bg-white border border-slate-200 rounded-[24px] p-4 flex flex-wrap items-center gap-4 justify-between shadow-sm">
-              <div className="flex flex-wrap items-center gap-3.5 flex-1 min-w-[280px]">
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search SKU or Item..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-[14px] pl-10 pr-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500 placeholder-slate-400"
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <select
-                  className="bg-white border border-slate-200 rounded-[14px] px-3.5 py-2.5 text-sm text-slate-600 focus:outline-none cursor-pointer"
-                  value={selectedCategory}
-                  onChange={e => setSelectedCategory(e.target.value)}
-                >
-                  <option value="">All Categories</option>
-                  {Array.from(new Set(inventory.map(inv => inv.categoryName))).map((cat, i) => (
-                    <option key={i} value={cat}>{cat}</option>
-                  ))}
-                </select>
-
-                <select
-                  className="bg-white border border-slate-200 rounded-[14px] px-3.5 py-2.5 text-sm text-slate-600 focus:outline-none cursor-pointer"
-                  value={selectedLocation}
-                  onChange={e => setSelectedLocation(e.target.value)}
-                >
-                  <option value="">All Locations</option>
-                  {Array.from(new Set(inventory.map(inv => inv.locationName))).map((loc, i) => (
-                    <option key={i} value={loc}>{loc}</option>
-                  ))}
-                </select>
-              </div>
-
+          <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-5 rounded-[24px] border border-slate-200/80 shadow-sm backdrop-blur-md">
+            <div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const csvContent = "data:text/csv;charset=utf-8," 
-                      + ["Item,SKU,Category,Location,Batch,Physical Qty,Reserved Qty,Available Qty"].join(",") + "\n"
-                      + filteredInventory.map(e => `${e.itemName},${e.sku},${e.categoryName},${e.locationName},${e.batchCode},${e.physicalQty},${e.reservedQty},${e.availableQty}`).join("\n");
-                    const encodedUri = encodeURI(csvContent);
-                    const link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", "Transit_Inventory_Status.csv");
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    setSuccessMsg("Exporting CSV report...");
-                  }}
-                  className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[14px] text-sm text-slate-600 cursor-pointer transition"
-                >
-                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                  <span>Export CSV</span>
-                </button>
+                <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 capitalize">
+                  {activeTab.replace('-', ' ')}
+                </h1>
+                <span className="bg-blue-50 border border-blue-200 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  Live Warehouse Qty
+                </span>
+              </div>
+              <p className="text-slate-500 mt-1 text-sm">Transit ERP Executive Terminal</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3.5">
+              {/* Clock */}
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[16px] text-xs font-bold text-slate-600">
+                <Clock className="h-3.5 w-3.5 text-indigo-600" />
+                <span>{currentTime}</span>
+              </div>
+
+              <button
+                onClick={fetchTabContent}
+                className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[16px] text-xs font-bold text-slate-700 transition cursor-pointer"
+              >
+                <RefreshCw className="h-3.5 w-3.5 text-blue-600" />
+                <span>Sync</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  if (user.role === 'ADMIN') setActiveModal('wo');
+                  else if (user.role === 'OPERATIONS') setActiveModal('transfer');
+                  else if (user.role === 'SALES') setActiveModal('order');
+                }}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-[16px] px-5 py-2.5 text-xs transition cursor-pointer flex items-center gap-2 shadow-sm shadow-blue-500/10"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Action console
+              </button>
+            </div>
+          </header>
+
+          {/* 4 KPI Metric Cards */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              {
+                title: 'Total Stock',
+                value: metrics.totalPhysical,
+                desc: 'Aggregate physical units',
+                sparkline: [20, 30, 45, 35, 60, 50, 80]
+              },
+              {
+                title: 'Reserved Stock',
+                value: metrics.totalReserved,
+                desc: 'Customer committed items',
+                sparkline: [10, 20, 15, 30, 25, 40, 35]
+              },
+              {
+                title: 'Active Work Orders',
+                value: metrics.activeWorkOrders,
+                desc: 'Admin allocated tasks',
+                sparkline: [5, 12, 8, 15, 10, 18, 14]
+              },
+              {
+                title: 'Pending Transfers',
+                value: metrics.pendingTransfers,
+                desc: 'Inter-warehouse transit',
+                sparkline: [2, 4, 3, 7, 5, 8, 6]
+              }
+            ].map((card, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{ y: -4 }}
+                className="glass-card rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm bg-white border border-slate-200"
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-tr from-transparent to-slate-50 rounded-full pointer-events-none transition group-hover:scale-125" />
+                <div>
+                  <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">{card.title}</span>
+                  <h3 className="text-3xl font-extrabold text-slate-800 mt-2 tracking-tight">{card.value}</h3>
+                </div>
+                <div className="mt-4 flex items-end justify-between">
+                  <span className="text-[10px] text-slate-400 font-bold">{card.desc}</span>
+                  {/* Micro sparkline */}
+                  <svg className="w-16 h-8 text-blue-600 stroke-current fill-none stroke-[2]" viewBox="0 0 70 30">
+                    <path d={card.sparkline.reduce((acc, val, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${i * 10} ${30 - val / 3}`, '')} />
+                  </svg>
+                </div>
+              </motion.div>
+            ))}
+          </section>
+
+          {/* TAB 1: Inventory Table & Search */}
+          {activeTab === 'inventory' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
+            <div className="space-y-6">
+              {/* Filter Console */}
+              <div className="bg-white border border-slate-200 rounded-[24px] p-4 flex flex-wrap items-center gap-4 justify-between shadow-sm">
+                <div className="flex flex-wrap items-center gap-3.5 flex-1 min-w-[280px]">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search SKU or Item..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-[14px] pl-10 pr-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500 placeholder-slate-400"
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+
+                  <select
+                    className="bg-white border border-slate-200 rounded-[14px] px-3.5 py-2.5 text-sm text-slate-600 focus:outline-none cursor-pointer"
+                    value={selectedCategory}
+                    onChange={e => setSelectedCategory(e.target.value)}
+                  >
+                    <option value="">All Categories</option>
+                    {Array.from(new Set(inventory.map(inv => inv.categoryName))).map((cat, i) => (
+                      <option key={i} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="bg-white border border-slate-200 rounded-[14px] px-3.5 py-2.5 text-sm text-slate-600 focus:outline-none cursor-pointer"
+                    value={selectedLocation}
+                    onChange={e => setSelectedLocation(e.target.value)}
+                  >
+                    <option value="">All Locations</option>
+                    {Array.from(new Set(inventory.map(inv => inv.locationName))).map((loc, i) => (
+                      <option key={i} value={loc}>{loc}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const csvContent = "data:text/csv;charset=utf-8,"
+                        + ["Item,SKU,Category,Location,Batch,Physical Qty,Reserved Qty,Available Qty"].join(",") + "\n"
+                        + filteredInventory.map(e => `${e.itemName},${e.sku},${e.categoryName},${e.locationName},${e.batchCode},${e.physicalQty},${e.reservedQty},${e.availableQty}`).join("\n");
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", "Transit_Inventory_Status.csv");
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      setSuccessMsg("Exporting CSV report...");
+                    }}
+                    className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[14px] text-sm text-slate-600 cursor-pointer transition"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                    <span>Export CSV</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
+                      <th className="p-4">SKU / Item</th>
+                      <th className="p-4">Category</th>
+                      <th className="p-4">Location</th>
+                      <th className="p-4">Batch</th>
+                      <th className="p-4">Physical Qty</th>
+                      <th className="p-4">Reserved Qty</th>
+                      <th className="p-4">Available Qty</th>
+                      <th className="p-4 text-right">Verification</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {filteredInventory.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No inventory records matching filters.</td>
+                      </tr>
+                    ) : (
+                      filteredInventory.map((inv) => (
+                        <tr
+                          key={inv.id}
+                          onClick={() => {
+                            setSelectedRow(inv);
+                            setEditingPhysicalQty(inv.physicalQty);
+                          }}
+                          className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                        >
+                          <td className="p-4">
+                            <span className="font-bold text-slate-800 block group-hover:text-blue-600 transition-colors">{inv.itemName}</span>
+                            <span className="text-xs text-slate-400 font-mono tracking-wider">{inv.sku}</span>
+                          </td>
+                          <td className="p-4 text-slate-600 font-semibold">{inv.categoryName}</td>
+                          <td className="p-4">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${inv.locationCode === 'BLR' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+                              inv.locationCode === 'MYS' ? 'bg-purple-50 border-purple-200 text-purple-600' :
+                                'bg-cyan-50 border-cyan-200 text-cyan-600'
+                              }`}>
+                              {inv.locationName}
+                            </span>
+                          </td>
+                          <td className="p-4 text-slate-600 font-mono">{inv.batchCode}</td>
+                          <td className="p-4 font-bold text-slate-700">{inv.physicalQty}</td>
+                          <td className="p-4 text-slate-400 font-semibold">{inv.reservedQty}</td>
+                          <td className="p-4">
+                            <span className={`font-bold px-2 py-1 rounded-md ${inv.availableQty <= 10 ? 'text-rose-600 bg-rose-50 border border-rose-100' : 'text-emerald-600 bg-emerald-50 border border-emerald-100'}`}>
+                              {inv.availableQty} Units
+                            </span>
+                          </td>
+                          <td className="p-4 text-right">
+                            <button
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-250 px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
+                            >
+                              Inspect
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
+          )}
 
-            {/* Table */}
-            <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-4">SKU / Item</th>
-                    <th className="p-4">Category</th>
-                    <th className="p-4">Location</th>
-                    <th className="p-4">Batch</th>
-                    <th className="p-4">Physical Qty</th>
-                    <th className="p-4">Reserved Qty</th>
-                    <th className="p-4">Available Qty</th>
-                    <th className="p-4 text-right">Verification</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {filteredInventory.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No inventory records matching filters.</td>
-                    </tr>
-                  ) : (
-                    filteredInventory.map((inv) => (
-                      <tr
-                        key={inv.id}
-                        onClick={() => {
-                          setSelectedRow(inv);
-                          setEditingPhysicalQty(inv.physicalQty);
-                        }}
-                        className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
-                      >
-                        <td className="p-4">
-                          <span className="font-bold text-slate-800 block group-hover:text-blue-600 transition-colors">{inv.itemName}</span>
-                          <span className="text-xs text-slate-400 font-mono tracking-wider">{inv.sku}</span>
-                        </td>
-                        <td className="p-4 text-slate-600 font-semibold">{inv.categoryName}</td>
-                        <td className="p-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                            inv.locationCode === 'BLR' ? 'bg-blue-50 border-blue-200 text-blue-600' :
-                            inv.locationCode === 'MYS' ? 'bg-purple-50 border-purple-200 text-purple-600' :
-                            'bg-cyan-50 border-cyan-200 text-cyan-600'
-                          }`}>
-                            {inv.locationName}
-                          </span>
-                        </td>
-                        <td className="p-4 text-slate-600 font-mono">{inv.batchCode}</td>
-                        <td className="p-4 font-bold text-slate-700">{inv.physicalQty}</td>
-                        <td className="p-4 text-slate-400 font-semibold">{inv.reservedQty}</td>
-                        <td className="p-4">
-                          <span className={`font-bold px-2 py-1 rounded-md ${inv.availableQty <= 10 ? 'text-rose-600 bg-rose-50 border border-rose-100' : 'text-emerald-600 bg-emerald-50 border border-emerald-100'}`}>
-                            {inv.availableQty} Units
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <button
-                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-250 px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
-                          >
-                            Inspect
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+          {/* TAB 2: Work Orders */}
+          {activeTab === 'work-orders' && (
+            <div className="space-y-8">
+
+              {/* Warehouse Selector + Stock Summary */}
+              <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-lg">Warehouse Work Orders</h3>
+                    <p className="text-xs text-slate-500 mt-1">Select a warehouse to view stock levels and manage work orders.</p>
+                  </div>
+                  {user.role !== 'SALES' && (
+                    <button
+                      onClick={() => {
+                        if (woWarehouse) {
+                          setNewWO({ ...newWO, locationId: woWarehouse });
+                        }
+                        setActiveModal('wo');
+                      }}
+                      className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0"
+                    >
+                      + New Work Order
+                    </button>
                   )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: Work Orders */}
-        {activeTab === 'work-orders' && (
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-4">Item & Location</th>
-                    <th className="p-4">Required Qty</th>
-                    <th className="p-4">Assigned User</th>
-                    <th className="p-4">Shortage</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {workOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">No work orders created.</td>
-                    </tr>
-                  ) : (
-                    workOrders.map((wo) => (
-                      <tr key={wo.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4">
-                          <span className="font-bold text-slate-800 block">{wo.item.name}</span>
-                          <span className="text-xs text-slate-400 font-bold">{wo.location.name}</span>
-                        </td>
-                        <td className="p-4 font-bold text-slate-700">{wo.requiredQty} Units</td>
-                        <td className="p-4 text-slate-600 font-semibold">{wo.assignedUser?.username}</td>
-                        <td className="p-4">
-                          <span className={`font-extrabold px-2 py-0.5 rounded border ${wo.shortage > 0 ? 'text-rose-600 bg-rose-50 border-rose-100' : 'text-emerald-600 bg-emerald-50 border-emerald-100'}`}>
-                            {wo.shortage} units
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                            wo.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                            wo.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                            'bg-blue-50 text-blue-600 border-blue-200'
-                          }`}>
-                            {wo.status.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          {user.role !== 'SALES' && wo.status !== 'COMPLETED' && (
-                            <div className="flex justify-end gap-1.5">
-                              {wo.status === 'ASSIGNED' && (
-                                <button
-                                  onClick={() => handleUpdateWorkOrderStatus(wo.id, 'IN_PROGRESS')}
-                                  className="bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500 hover:text-black px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
-                                >
-                                  Start Task
-                                </button>
-                              )}
-                              {wo.status === 'IN_PROGRESS' && (
-                                <button
-                                  onClick={() => handleUpdateWorkOrderStatus(wo.id, 'COMPLETED')}
-                                  className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
-                                >
-                                  Mark Complete
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: Stock Transfers */}
-        {activeTab === 'transfers' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-4">Item</th>
-                    <th className="p-4">Route Path</th>
-                    <th className="p-4">Quantity</th>
-                    <th className="p-4">Batch</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {transfers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">No stock transfers recorded.</td>
-                    </tr>
-                  ) : (
-                    transfers.map((tr) => (
-                      <tr key={tr.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-bold text-slate-800">{tr.item.name}</td>
-                        <td className="p-4 text-slate-600 font-bold">
-                          {tr.sourceLocation.code} → {tr.destLocation.code}
-                        </td>
-                        <td className="p-4 font-bold text-slate-700">{tr.quantity} units</td>
-                        <td className="p-4 text-slate-400 font-mono">{tr.batchCode || 'Not allocated'}</td>
-                        <td className="p-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                            tr.status === 'RECEIVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                            tr.status === 'DISPATCHED' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                            'bg-slate-100 text-slate-600 border-slate-200'
-                          }`}>
-                            {tr.status}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          {tr.status === 'REQUESTED' && (
-                            <button
-                              onClick={() => handleDispatchTransfer(tr.id)}
-                              className="bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-600 hover:text-white px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
-                            >
-                              Dispatch Stock
-                            </button>
-                          )}
-                          {tr.status === 'DISPATCHED' && (
-                            <button
-                              onClick={() => handleReceiveTransfer(tr.id)}
-                              className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition flex items-center gap-1 ml-auto cursor-pointer"
-                            >
-                              <Truck className="h-3 w-3" /> Receive Stock
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: Customer Orders */}
-        {activeTab === 'orders' && (user.role === 'ADMIN' || user.role === 'SALES') && (
-          <div className="space-y-8">
-            
-            {/* Warehouse Inventory Reservation Section */}
-            <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h3 className="font-extrabold text-slate-800 text-lg">Reserve from Warehouse</h3>
-                  <p className="text-xs text-slate-500 mt-1">Select a warehouse to view live inventory and place reservations.</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+
+                {/* Warehouse Buttons */}
+                <div className="flex flex-wrap items-center gap-2 mb-6">
                   <button
-                    onClick={() => setOrderWarehouse('')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      orderWarehouse === ''
-                        ? 'bg-slate-800 text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                    onClick={() => setWoWarehouse('')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${woWarehouse === ''
+                      ? 'bg-slate-800 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
                   >
                     All Warehouses
                   </button>
-                  {metadata.locations.map(l => (
-                    <button
-                      key={l.id}
-                      onClick={() => setOrderWarehouse(l.id)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        orderWarehouse === l.id
+                  {metadata.locations.map(l => {
+                    const locInventory = inventory.filter(inv => inv.locationId === l.id);
+                    const totalStock = locInventory.reduce((s, inv) => s + inv.physicalQty, 0);
+                    const totalReserved = locInventory.reduce((s, inv) => s + inv.reservedQty, 0);
+                    const available = totalStock - totalReserved;
+                    return (
+                      <button
+                        key={l.id}
+                        onClick={() => setWoWarehouse(l.id)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${woWarehouse === l.id
                           ? 'bg-slate-800 text-white shadow-sm'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {l.name}
-                    </button>
-                  ))}
+                          }`}
+                      >
+                        {l.name}
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${woWarehouse === l.id
+                          ? 'bg-white/20 text-white/90'
+                          : available > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'
+                          }`}>
+                          {available} avail
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Stock Summary for Selected Warehouse */}
+                <div className="border border-slate-100 rounded-xl overflow-hidden mb-6">
+                  <div className="p-3 bg-slate-50/80 border-b border-slate-100">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Stock at {woWarehouse ? metadata.locations.find(l => l.id === woWarehouse)?.name : 'All Warehouses'}
+                    </span>
+                  </div>
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-white text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        <th className="p-3">Item</th>
+                        {!woWarehouse && <th className="p-3">Location</th>}
+                        <th className="p-3">Physical</th>
+                        <th className="p-3">Reserved</th>
+                        <th className="p-3">Available</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-sm">
+                      {inventory.filter(inv => !woWarehouse || inv.locationId === woWarehouse).length === 0 ? (
+                        <tr><td colSpan={!woWarehouse ? 5 : 4} className="p-4 text-center text-slate-400 text-xs">No inventory at this warehouse.</td></tr>
+                      ) : (
+                        inventory.filter(inv => !woWarehouse || inv.locationId === woWarehouse).map(inv => (
+                          <tr key={inv.id} className="hover:bg-slate-50/50">
+                            <td className="p-3 font-bold text-slate-700">{inv.itemName} <span className="text-slate-400 font-normal">({inv.sku})</span></td>
+                            {!woWarehouse && (
+                              <td className="p-3">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${inv.locationCode === 'BLR' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+                                  inv.locationCode === 'MYS' ? 'bg-purple-50 border-purple-200 text-purple-600' :
+                                    'bg-cyan-50 border-cyan-200 text-cyan-600'
+                                  }`}>
+                                  {inv.locationName}
+                                </span>
+                              </td>
+                            )}
+                            <td className="p-3 text-slate-600">{inv.physicalQty}</td>
+                            <td className="p-3 text-slate-400">{inv.reservedQty}</td>
+                            <td className="p-3">
+                              <span className={`font-bold ${inv.availableQty > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                {inv.availableQty}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              
-              <div className="border border-slate-100 rounded-xl overflow-hidden">
+
+              {/* Work Orders Table */}
+              <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
+                <div className="p-5 border-b border-slate-100 bg-white">
+                  <h3 className="font-extrabold text-slate-800 text-lg">
+                    {woWarehouse ? `Work Orders — ${metadata.locations.find(l => l.id === woWarehouse)?.name}` : 'All Work Orders'}
+                  </h3>
+                </div>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
+                      <th className="p-4">Item & Location</th>
+                      <th className="p-4">Required Qty</th>
+                      <th className="p-4">Assigned User</th>
+                      <th className="p-4">Shortage</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {workOrders.filter(wo => !woWarehouse || wo.location?.id === woWarehouse || wo.locationId === woWarehouse).length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">No work orders found.</td>
+                      </tr>
+                    ) : (
+                      workOrders.filter(wo => !woWarehouse || wo.location?.id === woWarehouse || wo.locationId === woWarehouse).map((wo) => (
+                        <tr key={wo.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4">
+                            <span className="font-bold text-slate-800 block">{wo.item.name}</span>
+                            <span className="text-xs text-slate-400 font-bold">{wo.location.name}</span>
+                          </td>
+                          <td className="p-4 font-bold text-slate-700">{wo.requiredQty} Units</td>
+                          <td className="p-4 text-slate-600 font-semibold">{wo.assignedUser?.username}</td>
+                          <td className="p-4">
+                            <span className={`font-extrabold px-2 py-0.5 rounded border ${wo.shortage > 0 ? 'text-rose-600 bg-rose-50 border-rose-100' : 'text-emerald-600 bg-emerald-50 border-emerald-100'}`}>
+                              {wo.shortage} units
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${wo.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                              wo.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                'bg-blue-50 text-blue-600 border-blue-200'
+                              }`}>
+                              {wo.status.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="p-4 text-right">
+                            {user.role !== 'SALES' && wo.status !== 'COMPLETED' && (
+                              <div className="flex justify-end gap-1.5">
+                                {wo.status === 'ASSIGNED' && (
+                                  <button
+                                    onClick={() => handleUpdateWorkOrderStatus(wo.id, 'IN_PROGRESS')}
+                                    className="bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500 hover:text-black px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
+                                  >
+                                    Start Task
+                                  </button>
+                                )}
+                                {wo.status === 'IN_PROGRESS' && (
+                                  <button
+                                    onClick={() => handleUpdateWorkOrderStatus(wo.id, 'COMPLETED')}
+                                    className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
+                                  >
+                                    Mark Complete
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Stock Transfers */}
+          {activeTab === 'transfers' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
+            <div className="space-y-6">
+              <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
+                      <th className="p-4">Item</th>
+                      <th className="p-4">Route Path</th>
+                      <th className="p-4">Quantity</th>
+                      <th className="p-4">Batch</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {transfers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">No stock transfers recorded.</td>
+                      </tr>
+                    ) : (
+                      transfers.map((tr) => (
+                        <tr key={tr.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4 font-bold text-slate-800">{tr.item.name}</td>
+                          <td className="p-4 text-slate-600 font-bold">
+                            {tr.sourceLocation.code} → {tr.destLocation.code}
+                          </td>
+                          <td className="p-4 font-bold text-slate-700">{tr.quantity} units</td>
+                          <td className="p-4 text-slate-400 font-mono">{tr.batchCode || 'Not allocated'}</td>
+                          <td className="p-4">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${tr.status === 'RECEIVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                              tr.status === 'DISPATCHED' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                                'bg-slate-100 text-slate-600 border-slate-200'
+                              }`}>
+                              {tr.status}
+                            </span>
+                          </td>
+                          <td className="p-4 text-right">
+                            {tr.status === 'REQUESTED' && (
+                              <button
+                                onClick={() => handleDispatchTransfer(tr.id)}
+                                className="bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-600 hover:text-white px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
+                              >
+                                Dispatch Stock
+                              </button>
+                            )}
+                            {tr.status === 'DISPATCHED' && (
+                              <button
+                                onClick={() => handleReceiveTransfer(tr.id)}
+                                className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition flex items-center gap-1 ml-auto cursor-pointer"
+                              >
+                                <Truck className="h-3 w-3" /> Receive Stock
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: Customer Orders */}
+          {activeTab === 'orders' && (user.role === 'ADMIN' || user.role === 'SALES') && (
+            <div className="space-y-8">
+
+              {/* Warehouse Inventory Reservation Section */}
+              <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-lg">Reserve from Warehouse</h3>
+                    <p className="text-xs text-slate-500 mt-1">Select a warehouse to view live inventory and place reservations.</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setOrderWarehouse('')}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${orderWarehouse === ''
+                        ? 'bg-slate-800 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                    >
+                      All Warehouses
+                    </button>
+                    {metadata.locations.map(l => (
+                      <button
+                        key={l.id}
+                        onClick={() => setOrderWarehouse(l.id)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${orderWarehouse === l.id
+                          ? 'bg-slate-800 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                      >
+                        {l.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border border-slate-100 rounded-xl overflow-hidden">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
@@ -1077,17 +1286,16 @@ export default function App() {
                                 <span className="text-xs text-slate-400 block mt-0.5">Physical: {inv.physicalQty} | Reserved: {inv.reservedQty}</span>
                               </td>
                               <td className="p-4">
-                                <button 
+                                <button
                                   onClick={() => {
                                     setNewOrder({ ...newOrder, locationId: inv.locationId, itemId: inv.itemId });
                                     setActiveModal('order');
                                   }}
                                   disabled={available <= 0}
-                                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                                    available > 0 
-                                      ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:scale-105 cursor-pointer' 
-                                      : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-                                  }`}
+                                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${available > 0
+                                    ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:scale-105 cursor-pointer'
+                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                                    }`}
                                 >
                                   Reserve
                                 </button>
@@ -1099,458 +1307,457 @@ export default function App() {
                     </tbody>
                   </table>
                 </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
-              <div className="p-5 border-b border-slate-100 bg-white">
-                <h3 className="font-extrabold text-slate-800 text-lg">Active Customer Orders</h3>
               </div>
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-4">Item & Location</th>
-                    <th className="p-4">Company</th>
-                    <th className="p-4">Ordered Quantity</th>
-                    <th className="p-4">Reserved Quantity</th>
-                    <th className="p-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {orders.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">No customer orders recorded.</td>
+
+              <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
+                <div className="p-5 border-b border-slate-100 bg-white">
+                  <h3 className="font-extrabold text-slate-800 text-lg">Active Customer Orders</h3>
+                </div>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
+                      <th className="p-4">Item & Location</th>
+                      <th className="p-4">Company</th>
+                      <th className="p-4">Ordered Quantity</th>
+                      <th className="p-4">Reserved Quantity</th>
+                      <th className="p-4">Status</th>
                     </tr>
-                  ) : (
-                    orders.map((ord) => (
-                      <tr key={ord.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4">
-                          <span className="font-bold text-slate-800 block">{ord.item.name}</span>
-                          <span className="text-xs text-slate-400 font-bold">{ord.location.name}</span>
-                        </td>
-                        <td className="p-4 font-semibold text-slate-700">
-                          {ord.companyName || <span className="text-slate-300 font-normal">—</span>}
-                        </td>
-                        <td className="p-4 font-bold text-slate-700">{ord.quantity} Units</td>
-                        <td className="p-4 text-slate-400 font-semibold">{ord.reservedQty} Reserved</td>
-                        <td className="p-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                            ord.status === 'RESERVED' 
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
-                              : 'bg-amber-50 text-amber-600 border-amber-200'
-                          }`}>
-                            {ord.status}
-                          </span>
-                        </td>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {orders.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">No customer orders recorded.</td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      orders.map((ord) => (
+                        <tr key={ord.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4">
+                            <span className="font-bold text-slate-800 block">{ord.item.name}</span>
+                            <span className="text-xs text-slate-400 font-bold">{ord.location.name}</span>
+                          </td>
+                          <td className="p-4 font-semibold text-slate-700">
+                            {ord.companyName || <span className="text-slate-300 font-normal">—</span>}
+                          </td>
+                          <td className="p-4 font-bold text-slate-700">{ord.quantity} Units</td>
+                          <td className="p-4 text-slate-400 font-semibold">{ord.reservedQty} Reserved</td>
+                          <td className="p-4">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${ord.status === 'RESERVED'
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                              : 'bg-amber-50 text-amber-600 border-amber-200'
+                              }`}>
+                              {ord.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Analytics & Activity Split Console */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Chart 1: Stock by Location */}
-            <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
-              <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-                Stock by Location
-              </h4>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ReBarChart data={locationChartData}>
-                    <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
-                    <ReTooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }} />
-                    <Bar dataKey="value" fill="url(#blueGrad)" radius={[8, 8, 0, 0]}>
-                      {locationChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </ReBarChart>
-                </ResponsiveContainer>
+          {/* Analytics & Activity Split Console */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Chart 1: Stock by Location */}
+              <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
+                <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-blue-600" />
+                  Stock by Location
+                </h4>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ReBarChart data={locationChartData}>
+                      <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+                      <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
+                      <ReTooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }} />
+                      <Bar dataKey="value" fill="url(#blueGrad)" radius={[8, 8, 0, 0]}>
+                        {locationChartData.map((_entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </ReBarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Chart 2: Category Distribution */}
+              <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
+                <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-indigo-600" />
+                  Category Breakdown
+                </h4>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie
+                        data={categoryChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {categoryChartData.map((_entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <ReTooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }} />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
 
-            {/* Chart 2: Category Distribution */}
-            <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
+            {/* Activity Timeline */}
+            <div className="glass-card rounded-[24px] p-6 space-y-6 shadow-sm bg-white border border-slate-200">
               <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
-                <Layers className="h-4 w-4 text-indigo-600" />
-                Category Breakdown
+                <History className="h-4 w-4 text-cyan-600" />
+                Activity Feed
               </h4>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RePieChart>
-                    <Pie
-                      data={categoryChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {categoryChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <ReTooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px' }} />
-                  </RePieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* Activity Timeline */}
-          <div className="glass-card rounded-[24px] p-6 space-y-6 shadow-sm bg-white border border-slate-200">
-            <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
-              <History className="h-4 w-4 text-cyan-600" />
-              Activity Feed
-            </h4>
-            <div className="space-y-4 relative">
-              <div className="absolute left-4 top-1.5 bottom-1.5 w-0.5 bg-slate-100" />
-              {timelineData.length === 0 ? (
-                <div className="text-slate-400 text-xs text-center py-6">No recent warehouse transactions.</div>
-              ) : (
-                timelineData.map((item, idx) => (
-                  <div key={idx} className="flex gap-4 relative z-10 pl-1.5">
-                    <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-indigo-600 mt-1 shrink-0">
-                      •
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                        <span>{item.title}</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">{item.time}</span>
+              <div className="space-y-4 relative">
+                <div className="absolute left-4 top-1.5 bottom-1.5 w-0.5 bg-slate-100" />
+                {timelineData.length === 0 ? (
+                  <div className="text-slate-400 text-xs text-center py-6">No recent warehouse transactions.</div>
+                ) : (
+                  timelineData.map((item, idx) => (
+                    <div key={idx} className="flex gap-4 relative z-10 pl-1.5">
+                      <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-indigo-600 mt-1 shrink-0">
+                        •
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1 font-medium">{item.detail}</p>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                          <span>{item.title}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">{item.time}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 font-medium">{item.detail}</p>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
         </div>
 
-      {/* Radial Quick Action FAB */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <motion.button
-          onClick={() => setIsRadialOpen(!isRadialOpen)}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          className="h-14 w-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg cursor-pointer"
-        >
-          {isRadialOpen ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
-        </motion.button>
+        {/* Radial Quick Action FAB */}
+        <div className="fixed bottom-6 right-6 z-40">
+          <motion.button
+            onClick={() => setIsRadialOpen(!isRadialOpen)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="h-14 w-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg cursor-pointer"
+          >
+            {isRadialOpen ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+          </motion.button>
 
+          <AnimatePresence>
+            {isRadialOpen && (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="absolute bottom-16 right-0 bg-white border border-slate-200 rounded-[20px] shadow-2xl p-4 w-52 space-y-2"
+              >
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 pb-1.5">ERP Quick Actions</div>
+                <button
+                  onClick={() => { setIsRadialOpen(false); setActiveModal('wo'); }}
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
+                >
+                  <FileText className="h-3.5 w-3.5 text-violet-500" />
+                  Allocate Work Order
+                </button>
+                <button
+                  onClick={() => { setIsRadialOpen(false); setActiveModal('transfer'); }}
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Send className="h-3.5 w-3.5 text-cyan-500" />
+                  Request Transfer
+                </button>
+                <button
+                  onClick={() => { setIsRadialOpen(false); setActiveModal('order'); }}
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
+                >
+                  <ShoppingCart className="h-3.5 w-3.5 text-amber-500" />
+                  Reserve Stock
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Row details side drawer */}
         <AnimatePresence>
-          {isRadialOpen && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className="absolute bottom-16 right-0 bg-white border border-slate-200 rounded-[20px] shadow-2xl p-4 w-52 space-y-2"
-            >
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 pb-1.5">ERP Quick Actions</div>
-              <button
-                onClick={() => { setIsRadialOpen(false); setActiveModal('wo'); }}
-                className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
+          {selectedRow && (
+            <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex justify-end">
+              <div className="absolute inset-0" onClick={() => setSelectedRow(null)} />
+
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="w-full max-w-md bg-white border-l border-slate-200 p-6 shadow-2xl relative z-10 flex flex-col justify-between"
               >
-                <FileText className="h-3.5 w-3.5 text-violet-500" />
-                Allocate Work Order
-              </button>
-              <button
-                onClick={() => { setIsRadialOpen(false); setActiveModal('transfer'); }}
-                className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
-              >
-                <Send className="h-3.5 w-3.5 text-cyan-500" />
-                Request Transfer
-              </button>
-              <button
-                onClick={() => { setIsRadialOpen(false); setActiveModal('order'); }}
-                className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
-              >
-                <ShoppingCart className="h-3.5 w-3.5 text-amber-500" />
-                Reserve Stock
-              </button>
-            </motion.div>
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-bold text-slate-800">Item Inventory Card</h3>
+                    <button onClick={() => setSelectedRow(null)} className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-50 cursor-pointer">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-slate-55 border border-slate-100 p-4 rounded-2xl flex items-center gap-3">
+                      <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-indigo-600">
+                        <Layers className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-base">{selectedRow.itemName}</h4>
+                        <span className="text-xs text-slate-450 font-mono uppercase tracking-wider">SKU: {selectedRow.sku}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-slate-50 border border-slate-200/60 p-3 rounded-xl">
+                        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Warehouse Site</span>
+                        <span className="text-slate-700 text-sm font-bold mt-1 block">{selectedRow.locationName}</span>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-200/60 p-3 rounded-xl">
+                        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Batch Code</span>
+                        <span className="text-slate-700 text-sm font-mono mt-1 block">{selectedRow.batchCode}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-bold">Physical Quantity:</span>
+                        <span className="font-bold text-slate-800">{selectedRow.physicalQty} Units</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-bold">Reserved Quantity:</span>
+                        <span className="font-bold text-slate-500">{selectedRow.reservedQty} Units</span>
+                      </div>
+                      <div className="border-t border-slate-200 pt-2 flex justify-between items-center text-sm">
+                        <span className="text-slate-650 font-bold">Available Quantity:</span>
+                        <span className="font-extrabold text-emerald-600">{selectedRow.availableQty} Units</span>
+                      </div>
+                    </div>
+
+                    {user.role !== 'SALES' && (
+                      <form onSubmit={handleUpdateInventory} className="space-y-3.5 pt-4">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Adjust Physical Inventory</h4>
+                        <div>
+                          <input
+                            type="number"
+                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-blue-500 text-sm"
+                            value={editingPhysicalQty}
+                            onChange={e => setEditingPhysicalQty(parseInt(e.target.value) || 0)}
+                            min={selectedRow.reservedQty}
+                            required
+                          />
+                          <span className="text-[10px] text-slate-400 mt-1 block">Cannot be lower than reservation ({selectedRow.reservedQty}).</span>
+                        </div>
+                        <button
+                          type="submit"
+                          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-2.5 text-xs transition cursor-pointer"
+                        >
+                          Commit Stock Update
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
-      </div>
 
-      {/* Row details side drawer */}
-      <AnimatePresence>
-        {selectedRow && (
-          <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex justify-end">
-            <div className="absolute inset-0" onClick={() => setSelectedRow(null)} />
-            
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="w-full max-w-md bg-white border-l border-slate-200 p-6 shadow-2xl relative z-10 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-800">Item Inventory Card</h3>
-                  <button onClick={() => setSelectedRow(null)} className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-50 cursor-pointer">
+        {/* Action Modals */}
+        <AnimatePresence>
+          {activeModal && (
+            <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0" onClick={() => setActiveModal(null)} />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white border border-slate-200 rounded-[24px] max-w-md w-full p-6 shadow-2xl relative z-10"
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-lg font-bold text-slate-800">
+                    {activeModal === 'wo' ? 'Allocate Work Order' : activeModal === 'transfer' ? 'Request Stock Transfer' : 'Reserve Stock'}
+                  </h3>
+                  <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-650 p-1 rounded hover:bg-slate-50 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="bg-slate-55 border border-slate-100 p-4 rounded-2xl flex items-center gap-3">
-                    <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-indigo-600">
-                      <Layers className="h-6 w-6" />
+                {/* Form 1: Work Order */}
+                {activeModal === 'wo' && (
+                  <form onSubmit={handleCreateWorkOrder} className="space-y-4">
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Item</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newWO.itemId}
+                        onChange={e => setNewWO({ ...newWO, itemId: e.target.value })}
+                      >
+                        {metadata.items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.sku})</option>)}
+                      </select>
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-800 text-base">{selectedRow.itemName}</h4>
-                      <span className="text-xs text-slate-450 font-mono uppercase tracking-wider">SKU: {selectedRow.sku}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-50 border border-slate-200/60 p-3 rounded-xl">
-                      <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Warehouse Site</span>
-                      <span className="text-slate-700 text-sm font-bold mt-1 block">{selectedRow.locationName}</span>
-                    </div>
-                    <div className="bg-slate-50 border border-slate-200/60 p-3 rounded-xl">
-                      <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Batch Code</span>
-                      <span className="text-slate-700 text-sm font-mono mt-1 block">{selectedRow.batchCode}</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-500 font-bold">Physical Quantity:</span>
-                      <span className="font-bold text-slate-800">{selectedRow.physicalQty} Units</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-500 font-bold">Reserved Quantity:</span>
-                      <span className="font-bold text-slate-500">{selectedRow.reservedQty} Units</span>
-                    </div>
-                    <div className="border-t border-slate-200 pt-2 flex justify-between items-center text-sm">
-                      <span className="text-slate-650 font-bold">Available Quantity:</span>
-                      <span className="font-extrabold text-emerald-600">{selectedRow.availableQty} Units</span>
-                    </div>
-                  </div>
-
-                  {user.role !== 'SALES' && (
-                    <form onSubmit={handleUpdateInventory} className="space-y-3.5 pt-4">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Adjust Physical Inventory</h4>
-                      <div>
-                        <input
-                          type="number"
-                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-blue-500 text-sm"
-                          value={editingPhysicalQty}
-                          onChange={e => setEditingPhysicalQty(parseInt(e.target.value) || 0)}
-                          min={selectedRow.reservedQty}
-                          required
-                        />
-                        <span className="text-[10px] text-slate-400 mt-1 block">Cannot be lower than reservation ({selectedRow.reservedQty}).</span>
-                      </div>
-                      <button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-2.5 text-xs transition cursor-pointer"
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Location</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newWO.locationId}
+                        onChange={e => setNewWO({ ...newWO, locationId: e.target.value })}
                       >
-                        Commit Stock Update
-                      </button>
-                    </form>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                        {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Required Quantity</label>
+                      <input
+                        type="number"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:outline-none"
+                        value={newWO.requiredQty || ''}
+                        onChange={e => setNewWO({ ...newWO, requiredQty: parseInt(e.target.value) || 0 })}
+                        min={1}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Assigned User</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newWO.assignedUserId}
+                        onChange={e => setNewWO({ ...newWO, assignedUserId: e.target.value })}
+                      >
+                        {metadata.users.map(u => <option key={u.id} value={u.id}>{u.username} ({u.role})</option>)}
+                      </select>
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
+                    >
+                      Commit Work Order
+                    </button>
+                  </form>
+                )}
 
-      {/* Action Modals */}
-      <AnimatePresence>
-        {activeModal && (
-          <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0" onClick={() => setActiveModal(null)} />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white border border-slate-200 rounded-[24px] max-w-md w-full p-6 shadow-2xl relative z-10"
-            >
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-slate-800">
-                  {activeModal === 'wo' ? 'Allocate Work Order' : activeModal === 'transfer' ? 'Request Stock Transfer' : 'Reserve Stock'}
-                </h3>
-                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-650 p-1 rounded hover:bg-slate-50 cursor-pointer">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+                {/* Form 2: Transfer */}
+                {activeModal === 'transfer' && (
+                  <form onSubmit={handleCreateTransfer} className="space-y-4">
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Item</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newTransfer.itemId}
+                        onChange={e => setNewTransfer({ ...newTransfer, itemId: e.target.value })}
+                      >
+                        {metadata.items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.sku})</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Source Location</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newTransfer.sourceLocationId}
+                        onChange={e => setNewTransfer({ ...newTransfer, sourceLocationId: e.target.value })}
+                      >
+                        {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Destination Location</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newTransfer.destLocationId}
+                        onChange={e => setNewTransfer({ ...newTransfer, destLocationId: e.target.value })}
+                      >
+                        {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Transfer Quantity</label>
+                      <input
+                        type="number"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:outline-none"
+                        value={newTransfer.quantity || ''}
+                        onChange={e => setNewTransfer({ ...newTransfer, quantity: parseInt(e.target.value) || 0 })}
+                        min={1}
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
+                    >
+                      Commit Stock Transfer
+                    </button>
+                  </form>
+                )}
 
-              {/* Form 1: Work Order */}
-              {activeModal === 'wo' && (
-                <form onSubmit={handleCreateWorkOrder} className="space-y-4">
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Item</label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                      value={newWO.itemId}
-                      onChange={e => setNewWO({ ...newWO, itemId: e.target.value })}
+                {/* Form 3: Customer Order */}
+                {activeModal === 'order' && (
+                  <form onSubmit={handleCreateOrder} className="space-y-4">
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Item</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newOrder.itemId}
+                        onChange={e => setNewOrder({ ...newOrder, itemId: e.target.value })}
+                      >
+                        {metadata.items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.sku})</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Reservation Location</label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={newOrder.locationId}
+                        onChange={e => setNewOrder({ ...newOrder, locationId: e.target.value })}
+                      >
+                        {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Order Quantity</label>
+                      <input
+                        type="number"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:outline-none"
+                        value={newOrder.quantity || ''}
+                        onChange={e => setNewOrder({ ...newOrder, quantity: parseInt(e.target.value) || 0 })}
+                        min={1}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Company Name</label>
+                      <input
+                        type="text"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        value={newOrder.companyName || ''}
+                        onChange={e => setNewOrder({ ...newOrder, companyName: e.target.value })}
+                        placeholder="e.g. Acme Corp"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
                     >
-                      {metadata.items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.sku})</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Location</label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                      value={newWO.locationId}
-                      onChange={e => setNewWO({ ...newWO, locationId: e.target.value })}
-                    >
-                      {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Required Quantity</label>
-                    <input
-                      type="number"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:outline-none"
-                      value={newWO.requiredQty || ''}
-                      onChange={e => setNewWO({ ...newWO, requiredQty: parseInt(e.target.value) || 0 })}
-                      min={1}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Assigned User</label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                      value={newWO.assignedUserId}
-                      onChange={e => setNewWO({ ...newWO, assignedUserId: e.target.value })}
-                    >
-                      {metadata.users.map(u => <option key={u.id} value={u.id}>{u.username} ({u.role})</option>)}
-                    </select>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
-                  >
-                    Commit Work Order
-                  </button>
-                </form>
-              )}
-
-              {/* Form 2: Transfer */}
-              {activeModal === 'transfer' && (
-                <form onSubmit={handleCreateTransfer} className="space-y-4">
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Item</label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                      value={newTransfer.itemId}
-                      onChange={e => setNewTransfer({ ...newTransfer, itemId: e.target.value })}
-                    >
-                      {metadata.items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.sku})</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Source Location</label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                      value={newTransfer.sourceLocationId}
-                      onChange={e => setNewTransfer({ ...newTransfer, sourceLocationId: e.target.value })}
-                    >
-                      {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Destination Location</label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                      value={newTransfer.destLocationId}
-                      onChange={e => setNewTransfer({ ...newTransfer, destLocationId: e.target.value })}
-                    >
-                      {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Transfer Quantity</label>
-                    <input
-                      type="number"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:outline-none"
-                      value={newTransfer.quantity || ''}
-                      onChange={e => setNewTransfer({ ...newTransfer, quantity: parseInt(e.target.value) || 0 })}
-                      min={1}
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
-                  >
-                    Commit Stock Transfer
-                  </button>
-                </form>
-              )}
-
-              {/* Form 3: Customer Order */}
-              {activeModal === 'order' && (
-                <form onSubmit={handleCreateOrder} className="space-y-4">
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Item</label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                      value={newOrder.itemId}
-                      onChange={e => setNewOrder({ ...newOrder, itemId: e.target.value })}
-                    >
-                      {metadata.items.map(i => <option key={i.id} value={i.id}>{i.name} ({i.sku})</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Reservation Location</label>
-                    <select
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none"
-                      value={newOrder.locationId}
-                      onChange={e => setNewOrder({ ...newOrder, locationId: e.target.value })}
-                    >
-                      {metadata.locations.map(l => <option key={l.id} value={l.id}>{l.name} ({l.code})</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Order Quantity</label>
-                    <input
-                      type="number"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:outline-none"
-                      value={newOrder.quantity || ''}
-                      onChange={e => setNewOrder({ ...newOrder, quantity: parseInt(e.target.value) || 0 })}
-                      min={1}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-655 text-xs font-bold uppercase tracking-wider mb-2">Company Name</label>
-                    <input
-                      type="text"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                      value={newOrder.companyName || ''}
-                      onChange={e => setNewOrder({ ...newOrder, companyName: e.target.value })}
-                      placeholder="e.g. Acme Corp"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer"
-                  >
-                    Commit Stock Reservation
-                  </button>
-                </form>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                      Commit Stock Reservation
+                    </button>
+                  </form>
+                )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
