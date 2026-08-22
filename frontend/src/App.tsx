@@ -43,7 +43,13 @@ interface UserInfo {
   locationCode: string | null;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const getApiBase = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return 'http://localhost:5000/api';
+  const cleanUrl = envUrl.trim().replace(/\/+$/, '');
+  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+};
+const API_BASE = getApiBase();
 const COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#ef4444', '#f59e0b'];
 
 export default function App() {
@@ -138,7 +144,14 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emailOrUsername: loginInput, password: passwordInput })
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        if (!res.ok) {
+          throw new Error(`Server returned status ${res.status}. If Render backend is starting from sleep, please wait 30s and try again.`);
+        }
+      }
       if (!res.ok) throw new Error(data.message || 'Login failed');
 
       localStorage.setItem('token', data.token);
@@ -147,7 +160,7 @@ export default function App() {
       setUser(data.user);
       setSuccessMsg(`Welcome to Transit ERP, ${data.user.username}!`);
     } catch (err: any) {
-      setAuthError(err.message);
+      setAuthError(err.message || 'Unable to connect to backend server.');
     }
   };
 
