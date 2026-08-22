@@ -12,7 +12,10 @@ import {
   Cell
 } from 'recharts';
 import {
+  LayoutDashboard,
   Layers,
+  Boxes,
+  PackagePlus,
   FileText,
   Send,
   ShoppingCart,
@@ -32,7 +35,9 @@ import {
   History,
   TrendingUp,
   FileSpreadsheet,
-  Terminal
+  Terminal,
+  Building2,
+  Check
 } from 'lucide-react';
 
 interface UserInfo {
@@ -67,7 +72,7 @@ export default function App() {
   const [showDevPanel, setShowDevPanel] = useState(false);
 
   
-  const [activeTab, setActiveTab] = useState<'inventory' | 'work-orders' | 'transfers' | 'orders'>('inventory');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'inventory' | 'work-orders' | 'transfers' | 'orders'>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeWorkspace] = useState('Transit ERP Logistics');
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
@@ -76,7 +81,9 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
-  const [selectedBatch] = useState('');
+  const [selectedBatch, setSelectedBatch] = useState('');
+  const [inventoryWarehouseFilter, setInventoryWarehouseFilter] = useState<string>('ALL');
+  const [stockStatusFilter, setStockStatusFilter] = useState<'ALL' | 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK'>('ALL');
   const [orderWarehouse, setOrderWarehouse] = useState('');
   const [woWarehouse, setWoWarehouse] = useState('');
   const [transferWarehouse, setTransferWarehouse] = useState('');
@@ -105,13 +112,22 @@ export default function App() {
   const [newTransfer, setNewTransfer] = useState({ sourceLocationId: '', destLocationId: '', itemId: '', quantity: 0 });
   const [newOrder, setNewOrder] = useState({ itemId: '', locationId: '', quantity: 0, companyName: '' });
   const [newProduct, setNewProduct] = useState({ name: '', sku: '', categoryName: 'Electronics', locationId: '', batchCode: 'B1', initialPhysicalQty: 50 });
+  const [quickAddStockData, setQuickAddStockData] = useState<{ invId: string; itemName: string; sku: string; locationName: string; locationCode: string; currentPhysical: number; addQty: number }>({
+    invId: '',
+    itemName: '',
+    sku: '',
+    locationName: '',
+    locationCode: '',
+    currentPhysical: 0,
+    addQty: 10
+  });
 
   
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
   const [editingPhysicalQty, setEditingPhysicalQty] = useState<number>(0);
 
   
-  const [activeModal, setActiveModal] = useState<null | 'wo' | 'transfer' | 'order' | 'product'>(null);
+  const [activeModal, setActiveModal] = useState<null | 'wo' | 'transfer' | 'order' | 'product' | 'quickStock'>(null);
 
   
   useEffect(() => {
@@ -300,6 +316,27 @@ export default function App() {
     }
   };
 
+  const handleQuickAddStockSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickAddStockData.invId) return;
+    try {
+      const newQty = Number(quickAddStockData.currentPhysical) + Number(quickAddStockData.addQty);
+      const res = await fetch(`${API_BASE}/inventory/${quickAddStockData.invId}`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify({ physicalQty: newQty })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to add stock');
+
+      setSuccessMsg(`Added +${quickAddStockData.addQty} units to ${quickAddStockData.itemName} (${quickAddStockData.locationName})! New Stock: ${newQty}`);
+      setActiveModal(null);
+      fetchTabContent();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error updating stock');
+    }
+  };
+
   const handleCreateWorkOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -411,13 +448,75 @@ export default function App() {
   
   const filteredInventory = useMemo(() => {
     return inventory.filter(inv => {
-      const matchesSearch = inv.itemName.toLowerCase().includes(searchTerm.toLowerCase()) || inv.sku.toLowerCase().includes(searchTerm.toLowerCase());
+      const q = searchTerm.toLowerCase();
+      const matchesSearch = !q ||
+        inv.itemName.toLowerCase().includes(q) ||
+        inv.sku.toLowerCase().includes(q) ||
+        (inv.batchCode && inv.batchCode.toLowerCase().includes(q));
+
       const matchesCategory = selectedCategory ? inv.categoryName === selectedCategory : true;
       const matchesLocation = selectedLocation ? inv.locationName === selectedLocation : true;
+      const matchesWarehouseBtn = inventoryWarehouseFilter === 'ALL'
+        ? true
+        : (inv.locationCode === inventoryWarehouseFilter || inv.locationName === inventoryWarehouseFilter);
       const matchesBatch = selectedBatch ? inv.batchCode === selectedBatch : true;
-      return matchesSearch && matchesCategory && matchesLocation && matchesBatch;
+
+      let matchesStatus = true;
+      if (stockStatusFilter === 'IN_STOCK') matchesStatus = inv.availableQty > 10;
+      else if (stockStatusFilter === 'LOW_STOCK') matchesStatus = inv.availableQty > 0 && inv.availableQty <= 10;
+      else if (stockStatusFilter === 'OUT_OF_STOCK') matchesStatus = inv.availableQty <= 0;
+
+      return matchesSearch && matchesCategory && matchesLocation && matchesWarehouseBtn && matchesBatch && matchesStatus;
     });
-  }, [inventory, searchTerm, selectedCategory, selectedLocation, selectedBatch]);
+  }, [inventory, searchTerm, selectedCategory, selectedLocation, inventoryWarehouseFilter, selectedBatch, stockStatusFilter]);
+
+  
+  const warehouseStockCounts = useMemo(() => {
+    const counts: { [key: string]: { items: number; stock: number; available: number } } = {
+      ALL: { items: inventory.length, stock: 0, available: 0 },
+      BLR: { items: 0, stock: 0, available: 0 },
+      MYS: { items: 0, stock: 0, available: 0 },
+      MAA: { items: 0, stock: 0, available: 0 }
+    };
+
+    inventory.forEach(inv => {
+      counts.ALL.stock += inv.physicalQty;
+      counts.ALL.available += inv.availableQty;
+
+      const code = inv.locationCode || 'BLR';
+      if (!counts[code]) counts[code] = { items: 0, stock: 0, available: 0 };
+      counts[code].items += 1;
+      counts[code].stock += inv.physicalQty;
+      counts[code].available += inv.availableQty;
+    });
+
+    return counts;
+  }, [inventory]);
+
+  
+  const hubStats = useMemo(() => {
+    const hubs = [
+      { code: 'MYS', name: 'Mysore Hub', locationId: metadata.locations.find(l => l.code === 'MYS')?.id || '', color: 'from-purple-500/10 to-indigo-500/5', border: 'border-purple-200', text: 'text-purple-700', badge: 'bg-purple-50 text-purple-700 border-purple-200' },
+      { code: 'MAA', name: 'Chennai Hub', locationId: metadata.locations.find(l => l.code === 'MAA')?.id || '', color: 'from-cyan-500/10 to-blue-500/5', border: 'border-cyan-200', text: 'text-cyan-700', badge: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
+      { code: 'BLR', name: 'Bengaluru Hub', locationId: metadata.locations.find(l => l.code === 'BLR')?.id || '', color: 'from-blue-500/10 to-indigo-500/5', border: 'border-blue-200', text: 'text-blue-700', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
+    ];
+
+    return hubs.map(hub => {
+      const items = inventory.filter(inv => inv.locationCode === hub.code);
+      const physical = items.reduce((s, i) => s + i.physicalQty, 0);
+      const reserved = items.reduce((s, i) => s + i.reservedQty, 0);
+      const available = items.reduce((s, i) => s + i.availableQty, 0);
+      const activeWO = workOrders.filter(w => (w.locationCode === hub.code || w.locationId === hub.locationId) && w.status !== 'COMPLETED').length;
+      return {
+        ...hub,
+        itemCount: items.length,
+        physical,
+        reserved,
+        available,
+        activeWO
+      };
+    });
+  }, [inventory, workOrders, metadata.locations]);
 
   
   const metrics = useMemo(() => {
@@ -895,18 +994,27 @@ export default function App() {
 
           {}
           <nav className="space-y-1.5">
-            {(user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
-              <button
-                onClick={() => setActiveTab('inventory')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${activeTab === 'inventory'
-                  ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                  }`}
-              >
-                <Layers className="h-4 w-4" />
-                {!isSidebarCollapsed && <span>Inventory</span>}
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${activeTab === 'dashboard'
+                ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                }`}
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              {!isSidebarCollapsed && <span>Dashboard</span>}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('inventory')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] text-sm font-bold transition duration-200 cursor-pointer ${activeTab === 'inventory'
+                ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                }`}
+            >
+              <Boxes className="h-4 w-4" />
+              {!isSidebarCollapsed && <span>Inventory</span>}
+            </button>
 
             <button
               onClick={() => setActiveTab('work-orders')}
@@ -1005,7 +1113,7 @@ export default function App() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 capitalize">
-                  {activeTab.replace('-', ' ')}
+                  {activeTab === 'dashboard' ? 'Executive Dashboard' : activeTab.replace('-', ' ')}
                 </h1>
                 <span className="bg-blue-50 border border-blue-200 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
                   Live Warehouse Qty
@@ -1017,14 +1125,17 @@ export default function App() {
                 )}
               </div>
               <p className="text-slate-500 mt-1 text-sm">
-                {user.locationCode && user.role !== 'ADMIN'
-                  ? `Dedicated terminal for ${user.locationCode} warehouse hub.`
-                  : 'Transit ERP Executive Terminal'}
+                {activeTab === 'dashboard'
+                  ? 'Real-time multi-hub intelligence, live inventory metrics, and dispatch throughput.'
+                  : activeTab === 'inventory'
+                    ? 'Check warehouse stock balances, replenish inventory batches, and manage product catalog.'
+                    : user.locationCode && user.role !== 'ADMIN'
+                      ? `Dedicated terminal for ${user.locationCode} warehouse hub.`
+                      : 'Transit ERP Operations & Dispatch Terminal'}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3.5">
-              {}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[16px] text-xs font-bold text-slate-600">
                 <Clock className="h-3.5 w-3.5 text-indigo-600" />
                 <span>{currentTime}</span>
@@ -1040,7 +1151,7 @@ export default function App() {
 
               <button
                 onClick={() => {
-                  if (activeTab === 'inventory') setActiveModal('product');
+                  if (activeTab === 'dashboard' || activeTab === 'inventory') setActiveModal('product');
                   else if (user.role === 'ADMIN') setActiveModal('wo');
                   else if (user.role === 'OPERATIONS') setActiveModal('transfer');
                   else if (user.role === 'SALES') setActiveModal('order');
@@ -1053,35 +1164,41 @@ export default function App() {
             </div>
           </header>
 
-          {}
-          {activeTab === 'inventory' && (user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
+          {/* ========================================================================= */}
+          {/* TAB 1: DASHBOARD VIEW (Analytics, Hub Status, Charts, Activity) */}
+          {/* ========================================================================= */}
+          {activeTab === 'dashboard' && (
             <div className="space-y-8">
-              {}
+              {/* Top 4 KPI Metric Cards */}
               <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {[
                   {
                     title: 'Total Stock',
                     value: metrics.totalPhysical,
                     desc: 'Aggregate physical units',
-                    sparkline: [20, 30, 45, 35, 60, 50, 80]
+                    sparkline: [20, 30, 45, 35, 60, 50, 80],
+                    accent: 'text-blue-600'
                   },
                   {
                     title: 'Reserved Stock',
                     value: metrics.totalReserved,
                     desc: 'Customer committed items',
-                    sparkline: [10, 20, 15, 30, 25, 40, 35]
+                    sparkline: [10, 20, 15, 30, 25, 40, 35],
+                    accent: 'text-purple-600'
                   },
                   {
                     title: 'Active Work Orders',
                     value: metrics.activeWorkOrders,
                     desc: 'Admin allocated tasks',
-                    sparkline: [5, 12, 8, 15, 10, 18, 14]
+                    sparkline: [5, 12, 8, 15, 10, 18, 14],
+                    accent: 'text-indigo-600'
                   },
                   {
                     title: 'Pending Transfers',
                     value: metrics.pendingTransfers,
                     desc: 'Inter-warehouse transit',
-                    sparkline: [2, 4, 3, 7, 5, 8, 6]
+                    sparkline: [2, 4, 3, 7, 5, 8, 6],
+                    accent: 'text-cyan-600'
                   }
                 ].map((card, idx) => (
                   <motion.div
@@ -1096,8 +1213,7 @@ export default function App() {
                     </div>
                     <div className="mt-4 flex items-end justify-between">
                       <span className="text-[10px] text-slate-400 font-bold">{card.desc}</span>
-                      {}
-                      <svg className="w-16 h-8 text-blue-600 stroke-current fill-none stroke-[2]" viewBox="0 0 70 30">
+                      <svg className={`w-16 h-8 ${card.accent} stroke-current fill-none stroke-[2]`} viewBox="0 0 70 30">
                         <path d={card.sparkline.reduce((acc, val, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${i * 10} ${30 - val / 3}`, '')} />
                       </svg>
                     </div>
@@ -1105,10 +1221,102 @@ export default function App() {
                 ))}
               </section>
 
-              {}
+              {/* Warehouse Hubs Overview Grid with "Check Stocks" Buttons */}
+              <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-indigo-600" />
+                      Warehouse Hubs Intelligence
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Real-time stock allocation and live capacity across all regional fulfillment centers.</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setInventoryWarehouseFilter('ALL');
+                      setActiveTab('inventory');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer self-start sm:self-auto"
+                  >
+                    <span>View Full Inventory</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-1">
+                  {hubStats.map((hub) => (
+                    <div
+                      key={hub.code}
+                      className={`p-5 rounded-[20px] border bg-gradient-to-br ${hub.color} ${hub.border} flex flex-col justify-between space-y-4 hover:shadow-md transition`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{hub.code} Hub</span>
+                          <h4 className="text-lg font-black text-slate-800">{hub.name}</h4>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold border ${hub.badge}`}>
+                          {hub.itemCount} SKUs
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-slate-200/60 text-center">
+                        <div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase">Physical</div>
+                          <div className="text-base font-black text-slate-800 mt-0.5">{hub.physical}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold text-purple-500 uppercase">Reserved</div>
+                          <div className="text-base font-black text-purple-700 mt-0.5">{hub.reserved}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold text-emerald-500 uppercase">Available</div>
+                          <div className="text-base font-black text-emerald-700 mt-0.5">{hub.available}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => {
+                            setInventoryWarehouseFilter(hub.code);
+                            setActiveTab('inventory');
+                          }}
+                          className="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <Boxes className="h-3.5 w-3.5 text-blue-600" />
+                          <span>Check Stocks</span>
+                        </button>
+                        {(user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
+                          <button
+                            onClick={() => {
+                              const itemInHub = inventory.find(i => i.locationCode === hub.code);
+                              setQuickAddStockData({
+                                invId: itemInHub?.id || '',
+                                itemName: itemInHub?.itemName || 'Item',
+                                sku: itemInHub?.sku || '',
+                                locationName: hub.name,
+                                locationCode: hub.code,
+                                currentPhysical: itemInHub?.physicalQty || 0,
+                                addQty: 25
+                              });
+                              setActiveModal('quickStock');
+                            }}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+                            title="Add stock to this warehouse"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span>Add Stock</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Charts & Activity Feed */}
               <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
                 <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {}
+                  {/* Stock by Location Chart */}
                   <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
                     <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-blue-600" />
@@ -1130,7 +1338,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {}
+                  {/* Category Breakdown Chart */}
                   <div className="glass-card rounded-[24px] p-6 space-y-4 shadow-sm bg-white border border-slate-200">
                     <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
                       <Layers className="h-4 w-4 text-indigo-600" />
@@ -1159,7 +1367,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {}
+                {/* Activity Feed */}
                 <div className="glass-card rounded-[24px] p-6 space-y-6 shadow-sm bg-white border border-slate-200">
                   <h4 className="text-sm font-bold text-slate-850 uppercase tracking-wider flex items-center gap-2">
                     <History className="h-4 w-4 text-cyan-600" />
@@ -1188,15 +1396,194 @@ export default function App() {
                   </div>
                 </div>
               </section>
+            </div>
+          )}
 
-              {}
+          {/* ========================================================================= */}
+          {/* TAB 2: DEDICATED INVENTORY VIEW (Warehouse Filters, Add Stock, Tables) */}
+          {/* ========================================================================= */}
+          {activeTab === 'inventory' && (
+            <div className="space-y-6">
+              {/* Warehouse Selection Bar (Buttons for Warehouses & All) */}
+              <div className="bg-white border border-slate-200 rounded-[24px] p-4 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Select Warehouse Branch</span>
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-500">
+                    Showing <strong className="text-slate-800">{filteredInventory.length}</strong> items matching filters
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setInventoryWarehouseFilter('ALL')}
+                    className={`p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${inventoryWarehouseFilter === 'ALL'
+                      ? 'bg-blue-50/80 border-blue-500 shadow-sm shadow-blue-500/10 ring-2 ring-blue-500/20'
+                      : 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 text-slate-600'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${inventoryWarehouseFilter === 'ALL' ? 'text-blue-600' : 'text-slate-400'}`}>
+                        All Warehouses
+                      </span>
+                      {inventoryWarehouseFilter === 'ALL' && <Check className="h-3.5 w-3.5 text-blue-600" />}
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between">
+                      <span className="text-lg font-black text-slate-800">{warehouseStockCounts.ALL.stock}</span>
+                      <span className="text-[10px] font-semibold text-slate-400">{warehouseStockCounts.ALL.items} SKUs</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setInventoryWarehouseFilter('MYS')}
+                    className={`p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${inventoryWarehouseFilter === 'MYS'
+                      ? 'bg-purple-50/80 border-purple-500 shadow-sm shadow-purple-500/10 ring-2 ring-purple-500/20'
+                      : 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 text-slate-600'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${inventoryWarehouseFilter === 'MYS' ? 'text-purple-600' : 'text-slate-400'}`}>
+                        📍 Mysore (MYS)
+                      </span>
+                      {inventoryWarehouseFilter === 'MYS' && <Check className="h-3.5 w-3.5 text-purple-600" />}
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between">
+                      <span className="text-lg font-black text-slate-800">{warehouseStockCounts.MYS.stock}</span>
+                      <span className="text-[10px] font-semibold text-slate-400">{warehouseStockCounts.MYS.items} SKUs</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setInventoryWarehouseFilter('MAA')}
+                    className={`p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${inventoryWarehouseFilter === 'MAA'
+                      ? 'bg-cyan-50/80 border-cyan-500 shadow-sm shadow-cyan-500/10 ring-2 ring-cyan-500/20'
+                      : 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 text-slate-600'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${inventoryWarehouseFilter === 'MAA' ? 'text-cyan-600' : 'text-slate-400'}`}>
+                        📍 Chennai (MAA)
+                      </span>
+                      {inventoryWarehouseFilter === 'MAA' && <Check className="h-3.5 w-3.5 text-cyan-600" />}
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between">
+                      <span className="text-lg font-black text-slate-800">{warehouseStockCounts.MAA.stock}</span>
+                      <span className="text-[10px] font-semibold text-slate-400">{warehouseStockCounts.MAA.items} SKUs</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setInventoryWarehouseFilter('BLR')}
+                    className={`p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${inventoryWarehouseFilter === 'BLR'
+                      ? 'bg-indigo-50/80 border-indigo-500 shadow-sm shadow-indigo-500/10 ring-2 ring-indigo-500/20'
+                      : 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 text-slate-600'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${inventoryWarehouseFilter === 'BLR' ? 'text-indigo-600' : 'text-slate-400'}`}>
+                        📍 Bengaluru (BLR)
+                      </span>
+                      {inventoryWarehouseFilter === 'BLR' && <Check className="h-3.5 w-3.5 text-indigo-600" />}
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between">
+                      <span className="text-lg font-black text-slate-800">{warehouseStockCounts.BLR.stock}</span>
+                      <span className="text-[10px] font-semibold text-slate-400">{warehouseStockCounts.BLR.items} SKUs</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Stock Status Filter Tabs & Action Buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                {/* Stock Level Filter Tabs */}
+                <div className="flex items-center gap-1.5 bg-white border border-slate-200 p-1.5 rounded-2xl shadow-sm">
+                  {[
+                    { id: 'ALL', label: 'All Stock' },
+                    { id: 'IN_STOCK', label: '🟢 In Stock (>10)' },
+                    { id: 'LOW_STOCK', label: '🟡 Low Stock (≤10)' },
+                    { id: 'OUT_OF_STOCK', label: '🔴 Out of Stock' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setStockStatusFilter(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${stockStatusFilter === tab.id
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Main Action Buttons */}
+                <div className="flex items-center gap-2.5">
+                  {(user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
+                    <button
+                      onClick={() => {
+                        const first = filteredInventory[0] || inventory[0];
+                        setQuickAddStockData({
+                          invId: first?.id || '',
+                          itemName: first?.itemName || '',
+                          sku: first?.sku || '',
+                          locationName: first?.locationName || 'Warehouse',
+                          locationCode: first?.locationCode || '',
+                          currentPhysical: first?.physicalQty || 0,
+                          addQty: 25
+                        });
+                        setActiveModal('quickStock');
+                      }}
+                      className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-4 py-2.5 rounded-[14px] text-xs transition cursor-pointer shadow-sm shadow-emerald-500/20 hover:scale-102"
+                    >
+                      <PackagePlus className="h-4 w-4" />
+                      <span>+ Add / Replenish Stock</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setActiveModal('product')}
+                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold px-4 py-2.5 rounded-[14px] text-xs transition cursor-pointer shadow-sm shadow-blue-500/20 hover:scale-102"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>+ New Product</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const csvContent = "data:text/csv;charset=utf-8,"
+                        + ["Item,SKU,Category,Location,Batch,Physical Qty,Reserved Qty,Available Qty"].join(",") + "\n"
+                        + filteredInventory.map(e => `${e.itemName},${e.sku},${e.categoryName},${e.locationName},${e.batchCode},${e.physicalQty},${e.reservedQty},${e.availableQty}`).join("\n");
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", `Transit_Inventory_${inventoryWarehouseFilter}_${new Date().toISOString().slice(0, 10)}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      setSuccessMsg("Exporting CSV report...");
+                    }}
+                    className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[14px] text-xs font-bold text-slate-700 cursor-pointer transition shadow-sm"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                    <span>Export CSV</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Search & Category Filter Controls */}
               <div className="bg-white border border-slate-200 rounded-[24px] p-4 flex flex-wrap items-center gap-4 justify-between shadow-sm">
                 <div className="flex flex-wrap items-center gap-3.5 flex-1 min-w-[280px]">
                   <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="Search SKU or Item..."
+                      placeholder="Search SKU, Item Name, or Batch Code..."
                       className="w-full bg-slate-50 border border-slate-200 rounded-[14px] pl-10 pr-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500 placeholder-slate-400"
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
@@ -1219,73 +1606,53 @@ export default function App() {
                     value={selectedLocation}
                     onChange={e => setSelectedLocation(e.target.value)}
                   >
-                    <option value="">All Locations</option>
+                    <option value="">All Locations Dropdown</option>
                     {Array.from(new Set(inventory.map(inv => inv.locationName))).map((loc, i) => (
                       <option key={i} value={loc}>{loc}</option>
                     ))}
                   </select>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setActiveModal('product')}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold px-4 py-2.5 rounded-[14px] text-xs transition cursor-pointer shadow-sm shadow-blue-500/20 hover:scale-105"
+                  <select
+                    className="bg-white border border-slate-200 rounded-[14px] px-3.5 py-2.5 text-sm text-slate-600 focus:outline-none cursor-pointer"
+                    value={selectedBatch}
+                    onChange={e => setSelectedBatch(e.target.value)}
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>Add New Product</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const csvContent = "data:text/csv;charset=utf-8,"
-                        + ["Item,SKU,Category,Location,Batch,Physical Qty,Reserved Qty,Available Qty"].join(",") + "\n"
-                        + filteredInventory.map(e => `${e.itemName},${e.sku},${e.categoryName},${e.locationName},${e.batchCode},${e.physicalQty},${e.reservedQty},${e.availableQty}`).join("\n");
-                      const encodedUri = encodeURI(csvContent);
-                      const link = document.createElement("a");
-                      link.setAttribute("href", encodedUri);
-                      link.setAttribute("download", "Transit_Inventory_Status.csv");
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      setSuccessMsg("Exporting CSV report...");
-                    }}
-                    className="flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-[14px] text-sm text-slate-600 cursor-pointer transition"
-                  >
-                    <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                    <span>Export CSV</span>
-                  </button>
+                    <option value="">All Batches</option>
+                    {Array.from(new Set(inventory.map(inv => inv.batchCode).filter(Boolean))).map((batch, i) => (
+                      <option key={i} value={batch}>{batch}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {}
+              {/* Full Detailed Inventory Table */}
               <div className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
                       <th className="p-4">SKU / Item</th>
                       <th className="p-4">Category</th>
-                      <th className="p-4">Location</th>
+                      <th className="p-4">Warehouse Hub</th>
                       <th className="p-4">Batch</th>
-                      <th className="p-4">Physical Qty</th>
-                      <th className="p-4">Reserved Qty</th>
-                      <th className="p-4">Available Qty</th>
-                      <th className="p-4 text-right">Verification</th>
+                      <th className="p-4 text-center">Physical Qty</th>
+                      <th className="p-4 text-center">Reserved Qty</th>
+                      <th className="p-4 text-center">Available Qty</th>
+                      <th className="p-4 text-right">Quick Stock Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
                     {filteredInventory.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">No inventory records matching filters.</td>
+                        <td colSpan={8} className="p-12 text-center text-slate-400 font-medium">
+                          <Boxes className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                          No inventory records matching selected warehouse or filters.
+                        </td>
                       </tr>
                     ) : (
                       filteredInventory.map((inv) => (
                         <tr
                           key={inv.id}
-                          onClick={() => {
-                            setSelectedRow(inv);
-                            setEditingPhysicalQty(inv.physicalQty);
-                          }}
-                          className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                          className="hover:bg-slate-50/70 transition-colors group"
                         >
                           <td className="p-4">
                             <span className="font-bold text-slate-800 block group-hover:text-blue-600 transition-colors">{inv.itemName}</span>
@@ -1300,20 +1667,53 @@ export default function App() {
                               {inv.locationName}
                             </span>
                           </td>
-                          <td className="p-4 text-slate-600 font-mono">{inv.batchCode}</td>
-                          <td className="p-4 font-bold text-slate-700">{inv.physicalQty}</td>
-                          <td className="p-4 text-slate-400 font-semibold">{inv.reservedQty}</td>
-                          <td className="p-4">
-                            <span className={`font-bold px-2 py-1 rounded-md ${inv.availableQty <= 10 ? 'text-rose-600 bg-rose-50 border border-rose-100' : 'text-emerald-600 bg-emerald-50 border border-emerald-100'}`}>
+                          <td className="p-4 text-slate-600 font-mono font-medium">{inv.batchCode}</td>
+                          <td className="p-4 font-bold text-slate-800 text-center">{inv.physicalQty}</td>
+                          <td className="p-4 text-purple-600 font-semibold text-center">{inv.reservedQty}</td>
+                          <td className="p-4 text-center">
+                            <span className={`font-bold px-2.5 py-1 rounded-md text-xs border ${inv.availableQty <= 0
+                              ? 'text-rose-600 bg-rose-50 border-rose-200'
+                              : inv.availableQty <= 10
+                                ? 'text-amber-600 bg-amber-50 border-amber-200'
+                                : 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                              }`}>
                               {inv.availableQty} Units
                             </span>
                           </td>
                           <td className="p-4 text-right">
-                            <button
-                              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-250 px-3.5 py-1.5 rounded-[12px] text-xs font-bold transition cursor-pointer"
-                            >
-                              Inspect
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              {(user.role === 'ADMIN' || user.role === 'OPERATIONS') && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setQuickAddStockData({
+                                      invId: inv.id,
+                                      itemName: inv.itemName,
+                                      sku: inv.sku,
+                                      locationName: inv.locationName,
+                                      locationCode: inv.locationCode,
+                                      currentPhysical: inv.physicalQty,
+                                      addQty: 20
+                                    });
+                                    setActiveModal('quickStock');
+                                  }}
+                                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                  title="Add stock units directly to this batch"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                  <span>Add Stock</span>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setSelectedRow(inv);
+                                  setEditingPhysicalQty(inv.physicalQty);
+                                }}
+                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                              >
+                                Inspect
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -1984,7 +2384,15 @@ export default function App() {
               >
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-lg font-bold text-slate-800">
-                    {activeModal === 'product' ? 'Add New Product & Stock' : activeModal === 'wo' ? 'Allocate Work Order' : activeModal === 'transfer' ? 'Request Stock Transfer' : 'Reserve Stock'}
+                    {activeModal === 'product'
+                      ? 'Add New Product & Stock'
+                      : activeModal === 'quickStock'
+                        ? 'Replenish / Add Warehouse Stock'
+                        : activeModal === 'wo'
+                          ? 'Allocate Work Order'
+                          : activeModal === 'transfer'
+                            ? 'Request Stock Transfer'
+                            : 'Reserve Customer Stock'}
                   </h3>
                   <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-650 p-1 rounded hover:bg-slate-50 cursor-pointer">
                     <X className="h-5 w-5" />
@@ -2073,6 +2481,99 @@ export default function App() {
                       className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer shadow-md hover:shadow-lg"
                     >
                       Save & Initialize Stock
+                    </button>
+                  </form>
+                )}
+
+                {/* Quick Add / Replenish Stock Modal */}
+                {activeModal === 'quickStock' && (
+                  <form onSubmit={handleQuickAddStockSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">
+                        Select Inventory Item & Warehouse
+                      </label>
+                      <select
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none"
+                        value={quickAddStockData.invId}
+                        onChange={e => {
+                          const found = inventory.find(i => i.id === e.target.value);
+                          if (found) {
+                            setQuickAddStockData({
+                              ...quickAddStockData,
+                              invId: found.id,
+                              itemName: found.itemName,
+                              sku: found.sku,
+                              locationName: found.locationName,
+                              locationCode: found.locationCode,
+                              currentPhysical: found.physicalQty
+                            });
+                          }
+                        }}
+                      >
+                        {inventory.map(inv => (
+                          <option key={inv.id} value={inv.id}>
+                            {inv.itemName} ({inv.sku}) — {inv.locationName} [Batch: {inv.batchCode}] (Current: {inv.physicalQty})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {quickAddStockData.invId && (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 font-semibold">Warehouse Hub:</span>
+                          <span className="font-bold text-slate-800">{quickAddStockData.locationName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 font-semibold">Current Physical Stock:</span>
+                          <span className="font-bold text-slate-800">{quickAddStockData.currentPhysical} units</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 font-semibold">New Total Stock:</span>
+                          <span className="font-extrabold text-emerald-600">
+                            {Number(quickAddStockData.currentPhysical) + Number(quickAddStockData.addQty || 0)} units
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">
+                        Quantity to Add (Units)
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold"
+                          value={quickAddStockData.addQty || ''}
+                          onChange={e => setQuickAddStockData({ ...quickAddStockData, addQty: parseInt(e.target.value) || 0 })}
+                          min={1}
+                          required
+                        />
+                        <div className="flex items-center gap-1">
+                          {[10, 25, 50, 100].map(val => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => setQuickAddStockData({ ...quickAddStockData, addQty: val })}
+                              className={`px-2.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer ${quickAddStockData.addQty === val
+                                ? 'bg-emerald-50 border-emerald-400 text-emerald-700 font-black'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                }`}
+                            >
+                              +{val}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl py-3 text-xs transition mt-2 cursor-pointer shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                    >
+                      <PackagePlus className="h-4 w-4" />
+                      <span>Confirm & Replenish Stock</span>
                     </button>
                   </form>
                 )}
