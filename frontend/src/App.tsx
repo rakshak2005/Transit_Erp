@@ -31,7 +31,8 @@ import {
   Briefcase,
   History,
   TrendingUp,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Terminal
 } from 'lucide-react';
 
 interface UserInfo {
@@ -62,6 +63,7 @@ export default function App() {
   const [loginInput, setLoginInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
+  const [showDevPanel, setShowDevPanel] = useState(false);
 
   // UI layout states
   const [activeTab, setActiveTab] = useState<'inventory' | 'work-orders' | 'transfers' | 'orders'>('inventory');
@@ -434,85 +436,239 @@ export default function App() {
   // Login view
   if (!token || !user) {
     return (
-      <div className="min-h-screen flex flex-col lg:flex-row bg-[#F8FAFC] relative overflow-hidden font-sans">
+      <div className="h-screen w-screen flex flex-col lg:flex-row bg-[#F8FAFC] relative overflow-hidden font-sans">
         {/* Background Dot Grid */}
         <div className="absolute inset-0 z-0 opacity-[0.05]" style={{
           backgroundImage: 'radial-gradient(#4f46e5 1.5px, transparent 1.5px)',
           backgroundSize: '32px 32px'
         }} />
 
-        {/* Left Side: Premium Hero Section (Dark Indigo Logistics Theme) */}
-        <div className="lg:w-[55%] bg-[#0F172A] relative flex flex-col justify-between p-8 lg:p-20 text-white overflow-hidden shrink-0 min-h-[350px] lg:min-h-screen border-b lg:border-b-0 lg:border-r border-slate-800/50">
-          {/* Background Gradient Layer */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A] via-[#1E1B4B] to-[#0F172A] z-0" />
-          
-          {/* Aurora Glows */}
-          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#4F46E5]/15 rounded-full blur-[120px] z-0" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#06B6D4]/10 rounded-full blur-[120px] z-0" />
+        {/* Left Side: Cohesive Enterprise Hero Section (Dark Indigo Theme) */}
+        <div className="lg:w-[55%] bg-[#080D1A] relative flex flex-col justify-between p-8 lg:p-12 xl:p-14 text-white overflow-hidden shrink-0 h-full border-b lg:border-b-0 lg:border-r border-slate-800/60">
+          {/* Ambient Lighting & Glows */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-950/50 via-[#080D1A] to-[#080D1A] z-0" />
+          <div className="absolute -top-24 -left-24 w-80 h-80 bg-blue-600/15 rounded-full blur-[100px] z-0 pointer-events-none" />
+          <div className="absolute top-1/2 -left-20 w-72 h-72 bg-cyan-500/10 rounded-full blur-[90px] z-0 pointer-events-none" />
+          <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-indigo-600/15 rounded-full blur-[100px] z-0 pointer-events-none" />
 
-          {/* Top: Logo inside Premium Glass Card */}
-          <motion.div 
+          {/* Top: Seamless Brand Header */}
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center gap-4 bg-white/5 backdrop-blur-[20px] px-6 py-4 rounded-2xl border border-white/[0.08] shadow-[0_20px_60px_rgba(79,70,229,0.2)] w-fit z-10"
+            className="flex items-center justify-between z-10 w-full"
           >
-            <img src="/logo.png" alt="Transit ERP Logo" className="h-10 object-contain" />
-            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">Transit ERP</span>
+            <div className="flex items-center gap-4">
+              {/* Vibrant Ambient Glow Logo Emblem */}
+              <div className="relative flex items-center justify-center group cursor-pointer">
+                <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-500 rounded-full blur-lg opacity-40 group-hover:opacity-75 transition-opacity duration-500 animate-pulse pointer-events-none" />
+                <img
+                  src="/logo.png"
+                  alt="Transit ERP Logo"
+                  className="h-11 w-auto object-contain relative z-10 drop-shadow-[0_4px_16px_rgba(59,130,246,0.65)] group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+
+              {/* Brand Typography */}
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <span className="font-black text-2xl tracking-tight text-white font-sans">
+                    TRANSIT
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] text-slate-400 font-mono tracking-wider uppercase">
+                    Enterprise Operations Terminal
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Live System Indicator */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] font-mono text-emerald-400 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>LIVE CLOUD</span>
+            </div>
           </motion.div>
 
-          {/* Center: Hero copy */}
-          <div className="my-auto py-8 space-y-6 max-w-xl z-10 relative">
-            <motion.h1 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl lg:text-[56px] font-black tracking-tight leading-[1.1] text-white"
-            >
-              Move Freight.<br />
-              <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#22d3ee] bg-clip-text text-transparent">Manage Everything.</span>
-            </motion.h1>
-            
-            <motion.p 
+          {/* Center: Hero Typography & Developer Mode Card */}
+          <div className="my-auto py-4 space-y-5 max-w-xl z-10 relative">
+            {/* Pill Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-[11px] font-mono font-bold tracking-wide">
+              <span>Autonomous Supply Chain & Logistics</span>
+            </div>
+
+            {/* Main Headline */}
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-slate-400 text-base lg:text-lg leading-relaxed font-semibold"
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-3xl lg:text-[44px] font-black tracking-tight leading-[1.08] text-white"
             >
-              One intelligent platform for warehouse operations, inventory management, dispatch tracking, and transport analytics.
+              Move Freight.<br />
+              <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-cyan-300 bg-clip-text text-transparent">Manage Everything.</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-slate-400 text-xs lg:text-sm leading-relaxed font-medium"
+            >
+              One unified platform for real-time inventory allocation, automated work orders, and inter-hub dispatch tracking.
             </motion.p>
 
+            {/* Developer Mode Terminal Notification (Dismissible with Into / X mark) */}
+            <AnimatePresence>
+              {showDevPanel ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 15, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="rounded-2xl bg-[#090E17]/95 border border-emerald-500/30 p-4 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(16,185,129,0.1)] font-mono text-left relative overflow-hidden"
+                >
+                  {/* Top Scanline glow */}
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-500 via-cyan-400 to-indigo-500 animate-pulse" />
 
+                  {/* Terminal Header Bar */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800/80 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1.5 items-center">
+                        <span className="h-2.5 w-2.5 rounded-full bg-rose-500 inline-block shadow-sm"></span>
+                        <span className="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block shadow-sm"></span>
+                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block shadow-sm"></span>
+                      </div>
+                      <span className="text-[11px] text-emerald-400 font-extrabold ml-1.5 tracking-wider uppercase">
+                        DEVELOPER MODE
+                      </span>
+                    </div>
 
+                    {/* Into / Close mark button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowDevPanel(false)}
+                      className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer flex items-center gap-1 group"
+                      title="Close developer mode window"
+                    >
+                      <X className="h-3.5 w-3.5 group-hover:rotate-90 transition-transform duration-200" />
+                    </button>
+                  </div>
+
+                  {/* Prompt */}
+                  <div className="text-[11px] text-emerald-400 mb-2 flex items-center justify-between">
+                    <span>$ select_role --auto-inject</span>
+                    <span className="text-[10px] text-zinc-500">1-click fill</span>
+                  </div>
+
+                  {/* 3 Interactive Terminal Rows */}
+                  <div className="space-y-1.5">
+                    {/* Admin */}
+                    <button
+                      type="button"
+                      onClick={() => { setLoginInput('admin@fundsroom.com'); setPasswordInput('admin123'); }}
+                      className="w-full flex items-center justify-between p-2 rounded-lg bg-zinc-950/80 hover:bg-emerald-950/40 border border-zinc-800 hover:border-emerald-500/50 transition cursor-pointer group text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-400 font-bold text-[11px]">&gt; ADMIN</span>
+                        <span className="text-zinc-300 text-[11px]">admin@fundsroom.com</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span className="text-zinc-500">pass:</span>
+                        <span className="text-zinc-200 font-bold">admin123</span>
+                        <span className="text-emerald-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">↵</span>
+                      </div>
+                    </button>
+
+                    {/* Ops */}
+                    <button
+                      type="button"
+                      onClick={() => { setLoginInput('ops@fundsroom.com'); setPasswordInput('ops123'); }}
+                      className="w-full flex items-center justify-between p-2 rounded-lg bg-zinc-950/80 hover:bg-cyan-950/40 border border-zinc-800 hover:border-cyan-500/50 transition cursor-pointer group text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-cyan-400 font-bold text-[11px]">&gt; OPS (BLR)</span>
+                        <span className="text-zinc-300 text-[11px]">ops@fundsroom.com</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span className="text-zinc-500">pass:</span>
+                        <span className="text-zinc-200 font-bold">ops123</span>
+                        <span className="text-cyan-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">↵</span>
+                      </div>
+                    </button>
+
+                    {/* Sales */}
+                    <button
+                      type="button"
+                      onClick={() => { setLoginInput('sales@fundsroom.com'); setPasswordInput('sales123'); }}
+                      className="w-full flex items-center justify-between p-2 rounded-lg bg-zinc-950/80 hover:bg-violet-950/40 border border-zinc-800 hover:border-violet-500/50 transition cursor-pointer group text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-violet-400 font-bold text-[11px]">&gt; SALES (MYS)</span>
+                        <span className="text-zinc-300 text-[11px]">sales@fundsroom.com</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span className="text-zinc-500">pass:</span>
+                        <span className="text-zinc-200 font-bold">sales123</span>
+                        <span className="text-violet-400 group-hover:translate-x-0.5 transition-transform font-bold text-xs">↵</span>
+                      </div>
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  type="button"
+                  onClick={() => setShowDevPanel(true)}
+                  className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-900/50 hover:border-emerald-400 transition-all duration-200 cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.15)] group"
+                >
+                  <Terminal className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                  <span>&gt; Open Developer Mode</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-sans font-semibold">Demo</span>
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Bottom: Version info */}
-          <div className="text-slate-500 text-xs font-medium z-10 pt-4">
-            © 2026 Transit ERP Enterprise Terminal. All rights reserved.
+          {/* Bottom: Clean System Telemetry Footer */}
+          <div className="flex items-center justify-between text-slate-400 text-xs font-mono z-10 pt-3 border-t border-slate-800/60">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+              <span>Transit ERP Enterprise Core</span>
+            </div>
+            <span className="text-[10px] text-slate-500">Fundsroom 2ndROund</span>
           </div>
         </div>
 
-        {/* Right Side: Glassmorphism Login Card */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 z-10">
+        {/* Right Side: Clean Full Glassmorphism Sign In Card */}
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 z-10 relative">
+          {/* Subtle Ambient Glow Behind Card */}
+          <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-1/4 right-1/3 w-72 h-72 bg-blue-500/15 rounded-full blur-[90px] pointer-events-none" />
+
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="w-full max-w-[460px] p-8 lg:p-10 rounded-[28px] border border-white/[0.18] shadow-[0_30px_80px_rgba(15,23,42,0.12),0_0_0_1px_rgba(255,255,255,0.1)_inset] bg-white/[0.65] backdrop-blur-[24px]"
+            className="w-full max-w-[460px] p-8 lg:p-10 rounded-[32px] border border-white/80 shadow-[0_30px_90px_rgba(79,70,229,0.18),0_15px_35px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(255,255,255,1)] bg-white/75 backdrop-blur-[30px] relative overflow-hidden"
           >
+            {/* Top Glass Shimmer Line */}
+            <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+
             {/* Header */}
             <div className="mb-8">
-              <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Sign In</h2>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Sign In</h2>
               <p className="text-slate-500 text-xs mt-1 font-semibold uppercase tracking-wider">Enter your terminal credentials</p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-1">
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-1.5">
                 <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Username / Email</label>
                 <input
                   type="text"
-                  className="w-full bg-white/50 backdrop-blur-md border border-white/60 rounded-[14px] px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5]/60 focus:ring-4 focus:ring-[#4F46E5]/10 focus:bg-white/70 text-sm transition-all duration-300 shadow-[0_2px_10px_rgba(0,0,0,0.04),inset_0_1px_2px_rgba(255,255,255,0.8)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(255,255,255,0.8)] hover:bg-white/60"
+                  className="w-full bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-[16px] px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/15 focus:bg-white text-sm transition-all duration-300 shadow-[0_2px_12px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,1)] hover:border-slate-300 hover:bg-white"
                   placeholder="name@company.com"
                   value={loginInput}
                   onChange={e => setLoginInput(e.target.value)}
@@ -520,18 +676,17 @@ export default function App() {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Password</label>
                 <div className="relative">
                   <input
                     type="password"
-                    className="w-full bg-white/50 backdrop-blur-md border border-white/60 rounded-[14px] px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5]/60 focus:ring-4 focus:ring-[#4F46E5]/10 focus:bg-white/70 text-sm transition-all duration-300 pr-12 shadow-[0_2px_10px_rgba(0,0,0,0.04),inset_0_1px_2px_rgba(255,255,255,0.8)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(255,255,255,0.8)] hover:bg-white/60"
+                    className="w-full bg-white/80 backdrop-blur-md border border-slate-200/90 rounded-[16px] px-5 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#4F46E5] focus:ring-4 focus:ring-[#4F46E5]/15 focus:bg-white text-sm transition-all duration-300 pr-12 shadow-[0_2px_12px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,1)] hover:border-slate-300 hover:bg-white"
                     placeholder="••••••••"
                     value={passwordInput}
                     onChange={e => setPasswordInput(e.target.value)}
                     required
                   />
-                  {/* SVG Eye icon to avoid lucide imports */}
                   <svg className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 hover:text-slate-600 cursor-pointer transition" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -560,54 +715,23 @@ export default function App() {
               {/* Login Button with gradient & lift hover */}
               <button
                 type="submit"
-                className="group w-full bg-gradient-to-r from-[#4F46E5] to-[#2563EB] hover:from-[#4338ca] hover:to-[#1d4ed8] text-white font-extrabold rounded-[16px] py-4 transition-all duration-300 shadow-[0_4px_24px_rgba(79,70,229,0.3)] hover:shadow-[0_8px_40px_rgba(79,70,229,0.45)] hover:-translate-y-0.5 cursor-pointer text-sm flex items-center justify-center gap-2 backdrop-blur-sm"
+                className="group w-full bg-gradient-to-r from-[#4F46E5] via-[#4338CA] to-[#2563EB] hover:from-[#4338CA] hover:to-[#1D4ED8] text-white font-extrabold rounded-[16px] py-4 transition-all duration-300 shadow-[0_10px_30px_rgba(79,70,229,0.4)] hover:shadow-[0_15px_35px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 cursor-pointer text-sm flex items-center justify-center gap-2 backdrop-blur-sm"
               >
                 <span>Login</span>
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </button>
+
+              {/* Developer Mode Live Notice below Login Button */}
+              <div className="pt-3 border-t border-slate-200/70 flex items-center gap-2 justify-center text-center">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+                </span>
+                <p className="text-[11px] font-mono text-slate-500 font-medium">
+                  This system is in <span className="text-indigo-600 font-bold uppercase">Developer Mode</span> with live test credentials.
+                </p>
+              </div>
             </form>
-
-            {/* Divider */}
-            <div className="flex items-center gap-4 my-8">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300/40 to-transparent" />
-              <span className="text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">Role Terminals</span>
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300/40 to-transparent" />
-            </div>
-
-            {/* Quick Access Account Selector */}
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => { setLoginInput('admin@fundsroom.com'); setPasswordInput('admin123'); }}
-                className="bg-white/40 backdrop-blur-md hover:bg-indigo-50/60 border border-white/50 p-3 rounded-2xl text-xs text-slate-600 hover:text-[#4F46E5] cursor-pointer transition-all duration-300 flex flex-col items-center gap-2 hover:border-[#4F46E5]/40 hover:shadow-[0_4px_20px_rgba(79,70,229,0.1)] shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
-              >
-                <div className="h-8 w-8 rounded-full bg-indigo-100/50 flex items-center justify-center">
-                  <User className="h-4 w-4 text-[#4F46E5]" />
-                </div>
-                <span className="font-extrabold text-[10px] uppercase tracking-wider">Admin</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setLoginInput('ops@fundsroom.com'); setPasswordInput('ops123'); }}
-                className="bg-white/40 backdrop-blur-md hover:bg-emerald-50/60 border border-white/50 p-3 rounded-2xl text-xs text-slate-600 hover:text-emerald-700 cursor-pointer transition-all duration-300 flex flex-col items-center gap-2 hover:border-emerald-500/40 hover:shadow-[0_4px_20px_rgba(16,185,129,0.1)] shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
-              >
-                <div className="h-8 w-8 rounded-full bg-emerald-100/50 flex items-center justify-center">
-                  <Truck className="h-4 w-4 text-emerald-600" />
-                </div>
-                <span className="font-extrabold text-[10px] uppercase tracking-wider">Ops</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setLoginInput('sales@fundsroom.com'); setPasswordInput('sales123'); }}
-                className="bg-white/40 backdrop-blur-md hover:bg-violet-50/60 border border-white/50 p-3 rounded-2xl text-xs text-slate-600 hover:text-violet-700 cursor-pointer transition-all duration-300 flex flex-col items-center gap-2 hover:border-violet-500/40 hover:shadow-[0_4px_20px_rgba(139,92,246,0.1)] shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
-              >
-                <div className="h-8 w-8 rounded-full bg-violet-100/50 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-violet-600" />
-                </div>
-                <span className="font-extrabold text-[10px] uppercase tracking-wider">Sales</span>
-              </button>
-            </div>
-
           </motion.div>
         </div>
       </div>
